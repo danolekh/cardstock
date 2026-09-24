@@ -2,7 +2,7 @@
 
 Card backgrounds for [@danolekh/cardstock](https://cardstock.danolekh.com), on demand. One CLI to:
 
-- **add** the house artwork (guilloché, holo foil, aurora, topo and more) to your app: the images go into your public folder, each checked against its SHA-256, and the backgrounds go into a presets file you import;
+- **add** the house artwork (guilloché, holo foil, aurora, topo and more) and the live shader backgrounds (singularity, silk, liquid metal and more, with their posters) to your app: the images go into your public folder, each checked against its SHA-256, and the backgrounds go into a presets file you import;
 - **build** your own images into card backgrounds: cropped to the card's ratio at 1720×1080 and 860×540, encoded as WebP or AVIF, with their placeholder colour, tone and a legible ink worked out for you.
 
 The artwork stays out of your bundle and out of `node_modules` until you ask for it, and once added it's yours: plain files and plain data.
@@ -15,6 +15,8 @@ npx @danolekh/cardstock-backgrounds list
 
 # Add a few (or --all)
 npx @danolekh/cardstock-backgrounds add holo aurora guilloche
+# Shaders too: their posters download, and <Shader /> from @danolekh/cardstock/shader draws them live
+npx @danolekh/cardstock-backgrounds add silk singularity
 
 # Prerender your own
 npx @danolekh/cardstock-backgrounds build art/ocean.jpg --position top

@@ -6,7 +6,7 @@
 
 import { join, resolve } from "node:path";
 
-import { parseCardBackground } from "@danolekh/cardstock/background";
+import { BUILT_IN_SHADERS, parseCardBackground } from "@danolekh/cardstock/background";
 import type { CardBackground } from "@danolekh/cardstock/background";
 
 import { checkBase, DEFAULT_DIR, defaultBase, defaultOut } from "./defaults.ts";
@@ -51,6 +51,8 @@ export interface AddedPreset {
 
 export interface AddResult {
   presets: AddedPreset[];
+  /** Things to know that don't stop the add, such as a shader this cardstock doesn't ship. */
+  warnings: string[];
   presetsFile: MergeResult & { path: string; created: boolean };
 }
 
@@ -81,9 +83,19 @@ export async function addPresets(names: readonly string[], options: AddOptions =
   // Fetch and check everything first; write only once all of it is good.
   const pending: { path: string; bytes: Uint8Array }[] = [];
   const added: AddedPreset[] = [];
+  const warnings: string[] = [];
   for (const name of wanted) {
     const preset = presets[name]!;
     const background = presetBackground(preset, base);
+    // A newer manifest can name a shader an older cardstock doesn't have: the card shows the poster.
+    if (
+      background.type === "shader" &&
+      !background.shader.includes("/") &&
+      !(BUILT_IN_SHADERS as readonly string[]).includes(background.shader)
+    )
+      warnings.push(
+        `"${name}" uses the "${background.shader}" shader, which this version of @danolekh/cardstock doesn't have; cards show its poster until you update.`,
+      );
     if (!parseCardBackground(background))
       throw new Error(`"${name}" with base "${base}" isn't a valid card background; check --base.`);
     const files: AddedPreset["files"] = [];
@@ -109,7 +121,7 @@ export async function addPresets(names: readonly string[], options: AddOptions =
     json: options.json,
     dryRun: options.dryRun,
   });
-  return { presets: added, presetsFile };
+  return { presets: added, warnings, presetsFile };
 }
 
 async function fetchChecked(

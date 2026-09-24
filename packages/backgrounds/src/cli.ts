@@ -160,7 +160,8 @@ async function list(values: Record<string, unknown>) {
   }
   const rows = Object.entries(manifest.presets).map(([name, p]) => {
     const bytes = p.files.reduce((s, f) => s + f.bytes, 0);
-    return [name, p.label, p.background.type, p.tags.join(" "), bytes ? kb(bytes) : ""];
+    const type = p.background.type === "shader" ? `shader:${p.background.shader}` : p.background.type;
+    return [name, p.label, type, p.tags.join(" "), bytes ? kb(bytes) : ""];
   });
   const widths = rows[0]?.map((_, i) => Math.max(...rows.map((r) => r[i]!.length))) ?? [];
   for (const row of rows)
@@ -195,6 +196,7 @@ async function add(names: string[], values: Record<string, unknown>) {
     );
     console.log(`${preset.name}: ${files.length ? files.join(", ") : preset.background.type}`);
   }
+  for (const warning of result.warnings) console.warn(`warning: ${warning}`);
   reportPresets(result.presetsFile, dryRun);
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@danolekh/cardstock-backgrounds",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Card backgrounds for @danolekh/cardstock on demand: download the house artwork into your app, or prerender your own images at the card's size with their colour, tone and ink worked out.",
   "keywords": [
     "card",

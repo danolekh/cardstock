@@ -12,6 +12,7 @@ import type {
   ImageBackground,
   LinearBackground,
   RadialBackground,
+  ShaderBackground,
   SolidBackground,
 } from "@danolekh/cardstock/background";
 
@@ -30,10 +31,11 @@ export interface ManifestFile {
   sha256: string;
 }
 
-/** A preset's background without its URLs (for an image) and without its label (the preset has
- * one). */
+/** A preset's background without its URLs (an image's, a shader's poster) and without its label
+ * (the preset has one). */
 export type ManifestBackground =
   | Omit<ImageBackground, "src" | "srcSet" | "label">
+  | Omit<ShaderBackground, "poster" | "posterSrcSet" | "label">
   | Omit<SolidBackground, "label">
   | Omit<LinearBackground, "label">
   | Omit<RadialBackground, "label">;
@@ -43,7 +45,8 @@ export interface ManifestPreset {
   /** Loose descriptors for filtering: "foil", "light", "dark", "pattern", "gradient"… */
   tags: string[];
   background: ManifestBackground;
-  /** The image at each width, largest first by convention. Empty for a gradient or a solid. */
+  /** The image (or a shader's poster) at each width, largest first by convention. Empty for a
+   * gradient or a solid, and for a shader without a poster. */
   files: ManifestFile[];
 }
 
@@ -83,6 +86,20 @@ export const byWidth = (files: readonly ManifestFile[]): ManifestFile[] =>
 /** `base` and `file` joined with one slash. */
 export const joinUrl = (base: string, file: string): string => `${base.replace(/\/+$/, "")}/${file}`;
 
+/** The URL of the widest file, and a srcset of them all when there's more than one. */
+function urlsOf(files: readonly ManifestFile[], base: string) {
+  const sorted = byWidth(files);
+  const src = joinUrl(base, sorted[0]!.file);
+  const srcSet =
+    sorted.length > 1
+      ? [...sorted]
+          .reverse()
+          .map((f) => `${joinUrl(base, f.file)} ${f.width}w`)
+          .join(", ")
+      : undefined;
+  return { src, srcSet };
+}
+
 /** The full background for a preset, with its images served from `base` (a URL or a root-relative
  * path such as "/backgrounds"). Keys come out in reading order: type, label, then the paint. */
 export function presetBackground(
@@ -90,16 +107,20 @@ export function presetBackground(
   base: string,
 ): CardBackground & { label: string } {
   const { type, ...rest } = preset.background;
+  if (type === "shader") {
+    if (!preset.files.length)
+      return { type, label: preset.label, ...rest } as CardBackground & { label: string };
+    const { src, srcSet } = urlsOf(preset.files, base);
+    return {
+      type,
+      label: preset.label,
+      ...(rest as Omit<ShaderBackground, "type">),
+      poster: src,
+      ...(srcSet ? { posterSrcSet: srcSet } : {}),
+    };
+  }
   if (type !== "image") return { type, label: preset.label, ...rest } as CardBackground & { label: string };
-  const files = byWidth(preset.files);
-  const src = joinUrl(base, files[0]!.file);
-  const srcSet =
-    files.length > 1
-      ? [...files]
-          .reverse()
-          .map((f) => `${joinUrl(base, f.file)} ${f.width}w`)
-          .join(", ")
-      : undefined;
+  const { src, srcSet } = urlsOf(preset.files, base);
   return {
     type,
     label: preset.label,
@@ -156,12 +177,12 @@ export function validateManifest(input: unknown, source = "The manifest"): Manif
       continue;
     }
     const bg = p.background;
-    if ("src" in bg || "srcSet" in bg)
-      problems.push(`${at}.background: leave out src and srcSet; files gives them.`);
+    if ("src" in bg || "srcSet" in bg || "poster" in bg || "posterSrcSet" in bg)
+      problems.push(`${at}.background: leave out src, srcSet, poster and posterSrcSet; files gives them.`);
     if (bg.type === "image" && Array.isArray(p.files) && !p.files.length)
       problems.push(`${at}: an image needs at least one file.`);
-    if (bg.type !== "image" && Array.isArray(p.files) && p.files.length)
-      problems.push(`${at}: only an image has files.`);
+    if (bg.type !== "image" && bg.type !== "shader" && Array.isArray(p.files) && p.files.length)
+      problems.push(`${at}: only an image or a shader's poster has files.`);
     if (problems.length > before) continue;
     const preset = { label: p.label as string, tags: p.tags as string[], files } as ManifestPreset;
     // A root-relative base is enough to exercise the URL rules on the file names.
@@ -170,7 +191,14 @@ export function validateManifest(input: unknown, source = "The manifest"): Manif
       problems.push(`${at}.background isn't a valid card background (check its type, colours and position).`);
       continue;
     }
-    const { label: _label, src: _src, srcSet: _srcSet, ...clean } = parsed as ImageBackground;
+    const {
+      label: _label,
+      src: _src,
+      srcSet: _srcSet,
+      poster: _poster,
+      posterSrcSet: _posterSrcSet,
+      ...clean
+    } = parsed as unknown as Record<string, unknown>;
     preset.background = clean as ManifestBackground;
     presets[name] = preset;
   }
