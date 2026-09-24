@@ -1,7 +1,7 @@
 {
   "name": "@danolekh/cardstock",
   "version": "0.2.0",
-  "description": "Headless, composable bank-card primitives for React: flip, tilt, masked number reveal with timeouts and copy, freeze, statuses, spending meter, limit field and a swipeable card carousel.",
+  "description": "Headless, composable bank-card primitives for React: flip, tilt, storable backgrounds, masked number reveal with timeouts and copy, freeze, statuses, spending meter, limit field and a swipeable card carousel.",
   "keywords": [
     "base-ui",
     "card",
