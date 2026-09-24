@@ -29,6 +29,11 @@ A frozen card never shows its details. While `frozen` is set, `revealed` reads `
       description:
         "Hide the details again this long after revealing them. Off by default. See Number and reveal.",
     },
+    background: {
+      type: "CardBackground",
+      description:
+        "What the card is painted with, as data. Sets data-background and data-tone; see Backgrounds.",
+    },
     status: {
       type: '"active" | "pending" | "locked" | "expired" | "inactive"',
       description: "How the card stands, for display only. Sets data-status and drives Card.Status.",

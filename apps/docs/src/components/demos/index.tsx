@@ -49,6 +49,12 @@ export const demos = {
     () => import("./swiper-demo.tsx?raw"),
     "swiper-demo.tsx",
   ),
+  backgrounds: demo(
+    () => import("./backgrounds-demo"),
+    (m) => m.BackgroundsDemo,
+    () => import("./backgrounds-demo.tsx?raw"),
+    "backgrounds-demo.tsx",
+  ),
   limit: demo(
     () => import("./limit-demo"),
     (m) => m.LimitDemo,

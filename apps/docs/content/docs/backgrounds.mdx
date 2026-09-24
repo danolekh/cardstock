@@ -1,0 +1,106 @@
+---
+title: Backgrounds
+description: A card's look as data you store, paint, and frost.
+---
+
+<ComponentPreview name="backgrounds" />
+
+A card's background is data. `CardBackground` is a small JSON object describing a colour, a gradient or an image. Store it with the card, pass it to `Card.Root`, and the whole card follows it: `Card.Background` paints it, `data-tone` tells your text which way to go, and `<Frost />` draws it under the frost.
+
+```tsx
+import { backgroundInk, Card, type CardBackground } from "@danolekh/cardstock";
+
+const background: CardBackground = {
+  type: "image",
+  src: "/backgrounds/guilloche.webp",
+  srcSet: "/backgrounds/guilloche-860.webp 860w, /backgrounds/guilloche.webp 1720w",
+  color: "#10151d",
+  tone: "dark",
+  ink: "#f1dfa6",
+};
+
+<Card.Root background={background}>
+  <Card.Body>
+    <Card.Front
+      className="relative overflow-hidden text-(--ink)"
+      style={{ "--ink": backgroundInk(background) }}
+    >
+      <Card.Background className="absolute inset-0" />
+      <Card.Number value={pan} className="relative" />
+    </Card.Front>
+  </Card.Body>
+</Card.Root>;
+```
+
+## The format
+
+| `type`   | Fields                                                     | Paints                                            |
+| -------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| `solid`  | `color`                                                    | A flat colour                                     |
+| `linear` | `stops: [color, 0..1][]`, `angle` (degrees, default 135)   | `linear-gradient()`                               |
+| `radial` | `stops`, `at: [x, y]` (fractions, default the middle)      | `radial-gradient(circle farthest-corner at …)`    |
+| `image`  | `src`, `srcSet`, `position` (object-position), **`color`** | An `<img>` with `object-fit: cover`, over `color` |
+
+Every type also takes the following, all optional:
+
+- `tone` (`"dark"` or `"light"`): how the background reads.
+- `ink`: the text colour that goes with it.
+- `label`: a name for a picker.
+
+For an image, `color` is its dominant colour. It shows while the image loads, stays if the image fails, and sits under the frost. Pick it from the artwork.
+
+## Storing it
+
+Keep the object as JSON: in a `jsonb` column, a document field, or your API's card resource. If your app only offers fixed designs, store the preset's key and map it to the object in code. Either way, read it through `parseCardBackground` before it reaches the page:
+
+```ts
+import { parseCardBackground } from "@danolekh/cardstock";
+
+const background = parseCardBackground(row.background) ?? DEFAULT_BACKGROUND;
+```
+
+`parseCardBackground` returns a clean copy (unknown keys dropped) or `null`. It accepts only plain colours (hex, `rgb()`, `hsl()`, `oklch()` and the like, never `url()` or `var()`), and images served over `https:`, from root-relative paths, or as base64 `data:` images. A background that a user picked or uploaded can't inject CSS or load from an insecure origin.
+
+## Tone and ink
+
+`Card.Root` sets `data-tone` to `dark` or `light`. Style your text for it, or ask for a colour:
+
+- `backgroundTone(bg)` returns `tone` if you set it. Otherwise it measures the luminance of the colour (for a gradient, the average of its stops) and picks whichever of white or near-black text contrasts more. It can only measure hex and `rgb()` colours; for artwork or other colour formats, set `tone` yourself.
+- `backgroundInk(bg)` returns `ink` if you set it, or else white on dark and near-black on light.
+
+## `Card.Background`
+
+It paints the card's `background`, or its own `value` (for example, a plainer back face). It renders a `<div>` with `aria-hidden`, `data-type` and `data-tone`, so size and place it yourself, usually `absolute inset-0` as the face's first child.
+
+- A colour or gradient is painted on the div itself.
+- An image becomes an `<img alt="">` inside it, with `srcset`, `sizes` (pass your card's display width) and `loading` (`"lazy"` suits cards off screen, such as carousel neighbours). The div carries `data-loaded` once the image is in, which you can use for a fade, and `data-error` if it failed, in which case `color` stays.
+
+## Frost
+
+`<Frost />` reads the card's background, so it needs no props. It draws a gradient or colour exactly as the CSS paints it, and it picks up an image from the `<img>`. If an image comes from another origin, that server has to allow CORS (`Access-Control-Allow-Origin`), or the frost leaves the image out and draws `color` instead. The cardstock artwork is served that way.
+
+## The presets
+
+The registry has every background shown above as data: four gradients, plus ten original images drawn for cardstock. The images include guilloché engraving on ink and on sand, holographic foil, aurora and dusk meshes, topographic contours, brushed steel, laid paper, tide and a noir grid. Each image comes at 1720×1080 and 860×540.
+
+```bash
+pnpm dlx shadcn@latest add https://cardstock.danolekh.com/r/card-backgrounds.json
+```
+
+The presets link to `cardstock.danolekh.com`, which serves them with CORS. To host them yourself, download the `.webp` files and change `HOST` in `backgrounds.ts`. The files are regenerated with `pnpm --filter docs backgrounds`, and they're original work under the same MIT licence as cardstock.
+
+## Bring your own image
+
+Any image works as long as it's described in the same format. For example, [crd-ui](https://crd-ui.juanda.co/#backgrounds) publishes 45 CC0 card backgrounds. Download one, serve it from your site, and describe it:
+
+```ts
+const opal: CardBackground = {
+  type: "image",
+  src: "/backgrounds/opal.webp",
+  color: "#3b2f3f", // its dominant colour
+  tone: "dark",
+  ink: "#fff",
+};
+```
+
+Those files are 430×270, which looks soft on a high-density screen at full card size. For your own artwork, export at least twice the width you display the card at, at the card's ratio of 1.586:1. Provide a smaller copy through `srcSet` for 1× screens.
