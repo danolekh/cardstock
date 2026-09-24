@@ -24,6 +24,15 @@ A frozen card never shows its details. While `frozen` is set, `revealed` reads `
     revealed: { type: "boolean", description: "Controlled reveal state. Always false while frozen." },
     defaultRevealed: { type: "boolean", default: "false" },
     onRevealedChange: { type: "(revealed: boolean) => void" },
+    revealTimeoutMs: {
+      type: "number",
+      description:
+        "Hide the details again this long after revealing them. Off by default. See Number and reveal.",
+    },
+    status: {
+      type: '"active" | "pending" | "locked" | "expired" | "inactive"',
+      description: "How the card stands, for display only. Sets data-status and drives Card.Status.",
+    },
     revealTiming: {
       type: "Walk",
       default: "{ show: 0.3, hide: 0.15, ease: [0.23, 1, 0.32, 1] }",
@@ -99,3 +108,25 @@ To use a Base UI `Switch` instead, read the state from `useCard()`:
 const { frozen, setFrozen } = useCard();
 <Switch.Root checked={frozen} onCheckedChange={setFrozen} />;
 ```
+
+## Status
+
+Besides frozen, a card can show a status: `pending`, `locked`, `expired` or `inactive`. Set `status` on `Card.Root` and it appears as `data-status` on the root. `Card.Status` is shown while the status is anything but `active`, and renders your own text:
+
+```tsx
+<Card.Root status={card.status}>
+  <Card.Body>
+    <Card.Front>
+      …
+      <Card.Status className="absolute inset-0 grid place-items-center bg-black/50 data-starting-style:opacity-0 data-ending-style:opacity-0">
+        {(status) =>
+          ({ pending: "Activating…", locked: "Locked", expired: "Expired", inactive: "Inactive" })[status]
+        }
+      </Card.Status>
+    </Card.Front>
+  </Card.Body>
+</Card.Root>
+```
+
+- `Card.Status` enters and leaves like `Card.FrozenOverlay`, with `data-starting-style`, `data-ending-style` and `data-open`, and it waits for your transitions. While it leaves, it keeps the last status. Pass `keepMounted` to keep it in the DOM.
+- A status is for display only. It doesn't hide details or disable any trigger; `frozen` does that. Your app owns what a status means: the requests behind it, the actions allowed in it, and where it is stored.

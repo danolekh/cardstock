@@ -8,6 +8,7 @@ import { type Walk, useProgress } from "../utils/progress";
 import { useControllableState } from "../utils/use-controllable-state";
 import { CardContext, type CardContextValue, createRevealGroupRegistry } from "./context";
 import { useRevealTimeout } from "./reveal-group";
+import type { CardStatus } from "./status";
 
 /** Under 300ms and easing out, so the first digits land at once; hiding is quicker still. */
 export const REVEAL_TIMING: Walk = { show: 0.3, hide: 0.15, ease: [0.23, 1, 0.32, 1] };
@@ -18,6 +19,7 @@ export interface CardRootState extends Record<string, unknown> {
   flipped: boolean;
   frozen: boolean;
   revealed: boolean;
+  status: CardStatus | undefined;
 }
 
 export interface CardRootProps extends PartProps<"div", CardRootState> {
@@ -33,6 +35,8 @@ export interface CardRootProps extends PartProps<"div", CardRootState> {
   onRevealedChange?: (revealed: boolean) => void;
   /** Hide the details again this long after revealing them. Off by default. */
   revealTimeoutMs?: number;
+  /** How the card stands, for display only (`data-status`, `Card.Status`). */
+  status?: CardStatus;
   /** Timing of the reveal progress that drives `Card.Number`'s scramble. */
   revealTiming?: Walk;
   /** Timing of the freeze progress that drives `<Frost />`. */
@@ -52,6 +56,7 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
     defaultRevealed = false,
     onRevealedChange,
     revealTimeoutMs,
+    status,
     revealTiming = REVEAL_TIMING,
     freezeTiming = FREEZE_TIMING,
     ...rest
@@ -97,6 +102,7 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
       revealTiming,
       reducedMotion,
       revealGroups,
+      status,
     }),
     [
       flipped,
@@ -110,9 +116,10 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
       revealTiming,
       reducedMotion,
       revealGroups,
+      status,
     ],
   );
-  const state: CardRootState = { flipped, frozen, revealed };
+  const state: CardRootState = { flipped, frozen, revealed, status };
   const element = usePart("card", "div", state, rest, {});
   return <CardContext.Provider value={context}>{element}</CardContext.Provider>;
 }

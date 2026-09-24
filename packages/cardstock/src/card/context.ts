@@ -3,6 +3,7 @@ import type * as React from "react";
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 
 import type { Progress, Walk } from "../utils/progress";
+import type { CardStatus } from "./status";
 
 export interface CardContextValue {
   flipped: boolean;
@@ -18,6 +19,8 @@ export interface CardContextValue {
   freeze: Progress;
   revealTiming: Walk;
   reducedMotion: boolean;
+  /** How the card stands, for display: see `Card.Status`. */
+  status: CardStatus | undefined;
   /** The card's `Card.RevealGroup`s, by id. */
   revealGroups: RevealGroupRegistry;
 }

@@ -274,3 +274,43 @@ describe("Card.CopyTrigger", () => {
     expect(button("Copy").getAttribute("data-status")).toBe("idle");
   });
 });
+
+describe("Card.Status", () => {
+  function Stated(props: {
+    status?: React.ComponentProps<typeof Card.Root>["status"];
+    keepMounted?: boolean;
+  }) {
+    return (
+      <Card.Root status={props.status}>
+        <Card.Status keepMounted={props.keepMounted}>
+          {(status) => (status === "locked" ? "Locked by your bank" : `Card ${status}`)}
+        </Card.Status>
+      </Card.Root>
+    );
+  }
+
+  it("sets data-status on the root only when given", () => {
+    const { rerender } = render(<Stated />);
+    expect(slot("card").hasAttribute("data-status")).toBe(false);
+    rerender(<Stated status="pending" />);
+    expect(slot("card").getAttribute("data-status")).toBe("pending");
+  });
+
+  it("shows the app's text for a status other than active", () => {
+    const { rerender } = render(<Stated status="active" />);
+    expect(slot("card-status")).toBeNull();
+    rerender(<Stated status="locked" />);
+    expect(slot("card-status").textContent).toBe("Locked by your bank");
+    expect(slot("card-status").getAttribute("data-status")).toBe("locked");
+    expect(slot("card-status").hasAttribute("data-open")).toBe(true);
+    rerender(<Stated status="expired" />);
+    expect(slot("card-status").textContent).toBe("Card expired");
+  });
+
+  it("keeps the last status while it leaves, and stays mounted when asked", () => {
+    const { rerender } = render(<Stated status="inactive" keepMounted />);
+    rerender(<Stated status="active" keepMounted />);
+    expect(slot("card-status").hasAttribute("data-open")).toBe(false);
+    expect(slot("card-status").textContent).toBe("Card inactive");
+  });
+});

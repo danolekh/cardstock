@@ -17,5 +17,6 @@ export type { CardDigitsProps, CardDigitsState } from "./card/number";
 export type { CardFieldProps, CardFieldState } from "./card/fields";
 export type { CardTiltProps, CardTiltState } from "./card/tilt";
 export type { CardFrozenOverlayProps, CardFrozenOverlayState } from "./card/frozen-overlay";
+export type { CardStatus, CardStatusProps, CardStatusState } from "./card/status";
 export type { CardSpendingProps, CardSpendingState, CardSpendingIndicatorProps } from "./card/spending";
 export type { PartProps } from "./utils/part";
