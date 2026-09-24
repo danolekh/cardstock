@@ -1,75 +1,50 @@
 "use client";
-import { Card, type CardRootProps, type CardRootState } from "@danolekh/cardstock";
+import {
+  backgroundInk,
+  backgroundTone,
+  Card,
+  type CardBackground,
+  type CardRootProps,
+  type CardRootState,
+} from "@danolekh/cardstock";
 import { Frost } from "@danolekh/cardstock/frost";
 import type * as React from "react";
+
+import { BACKGROUNDS, type BackgroundName } from "./backgrounds";
 
 /* A styled card built from the cardstock primitives: tilt with a glare, a flip, a number that
  * decodes in fixed cells, spending along the bottom edge and frost when frozen. Everything that
  * moves reads the primitives' data attributes and CSS variables, so restyle freely. */
 
-export type CardDesign = "ink" | "paper" | "sage" | "ember";
+/** The four gradient designs the card started with; every preset is in `BACKGROUNDS`. */
+export const DESIGNS = {
+  ink: BACKGROUNDS.ink,
+  paper: BACKGROUNDS.paper,
+  sage: BACKGROUNDS.sage,
+  ember: BACKGROUNDS.ember,
+} as const;
+export type CardDesign = keyof typeof DESIGNS;
 
-type Palette = { bg: string; ink: string; sub: string; line: string; stops: [string, number][] };
+/** A hex ink at an alpha, as a real colour: the SVG decorations can't use CSS variables or
+ * color-mix(), because the frost snapshot draws each SVG as a standalone image. */
+function alpha(hex: string, a: number): string {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? [...h].map((c) => c + c).join("") : h.slice(0, 6);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  return `rgb(${r} ${g} ${b} / ${a})`;
+}
 
-export const DESIGNS: Record<CardDesign, Palette & { label: string }> = {
-  ink: {
-    label: "Ink",
-    stops: [
-      ["#34322d", 0],
-      ["#171614", 0.55],
-      ["#080807", 1],
-    ],
-    bg: "linear-gradient(135deg, #34322d, #171614 55%, #080807)",
-    ink: "#f1dfa6",
-    sub: "rgb(241 223 166 / 0.62)",
-    line: "rgb(241 223 166 / 0.1)",
-  },
-  paper: {
-    label: "Paper",
-    stops: [
-      ["#fbf8f1", 0],
-      ["#efe8d8", 0.6],
-      ["#e2d8c3", 1],
-    ],
-    bg: "linear-gradient(135deg, #fbf8f1, #efe8d8 60%, #e2d8c3)",
-    ink: "#1c1a17",
-    sub: "rgb(28 26 23 / 0.58)",
-    line: "rgb(28 26 23 / 0.07)",
-  },
-  sage: {
-    label: "Sage",
-    stops: [
-      ["#7f9b84", 0],
-      ["#566f5b", 0.55],
-      ["#3a4d3f", 1],
-    ],
-    bg: "linear-gradient(135deg, #7f9b84, #566f5b 55%, #3a4d3f)",
-    ink: "#f4f1e8",
-    sub: "rgb(244 241 232 / 0.7)",
-    line: "rgb(244 241 232 / 0.1)",
-  },
-  ember: {
-    label: "Ember",
-    stops: [
-      ["#ff8a5c", 0],
-      ["#e0512b", 0.5],
-      ["#a8321a", 1],
-    ],
-    bg: "linear-gradient(135deg, #ff8a5c, #e0512b 50%, #a8321a)",
-    ink: "#fff6ee",
-    sub: "rgb(255 246 238 / 0.72)",
-    line: "rgb(255 246 238 / 0.12)",
-  },
-};
-
-export interface PaymentCardProps extends Omit<CardRootProps, "children"> {
+export interface PaymentCardProps extends Omit<CardRootProps, "children" | "background"> {
   /** Rendered inside `Card.Root` after the card: a place for triggers and other parts. */
   children?: React.ReactNode;
   number: string;
   holder: string;
   expiry: string;
   securityCode: string;
-  design?: CardDesign;
+  /** What the card is painted with: any `CardBackground`, e.g. one you stored for this card. */
+  background?: CardBackground;
+  /** A preset from `backgrounds.ts` by name, when there's no `background`. */
+  design?: BackgroundName;
   /** Wordmark in the top-left corner. */
   brand?: string;
   spent?: number;
@@ -91,6 +66,7 @@ export function PaymentCard({
   holder,
   expiry,
   securityCode,
+  background,
   design = "ink",
   brand = "cardstock",
   spent,
@@ -101,17 +77,26 @@ export function PaymentCard({
   children,
   ...root
 }: PaymentCardProps): React.ReactElement {
-  const d = DESIGNS[design];
+  const bg: CardBackground = background ?? BACKGROUNDS[design];
+  const ink = backgroundInk(bg);
+  const d = { ink, sub: alpha(ink, 0.64), line: alpha(ink, 0.1) };
   const vars = {
-    "--card-bg": d.bg,
     "--card-ink": d.ink,
     "--card-sub": d.sub,
     "--card-line": d.line,
   } as React.CSSProperties;
-  const version = `${design}:${spent}:${limit}`;
+  const artwork = bg.type === "image";
+  // Artwork is busier than a gradient: a soft shadow keeps the text off it.
+  const lift = artwork
+    ? backgroundTone(bg) === "dark"
+      ? "[text-shadow:0_1px_2px_rgb(0_0_0/0.35)]"
+      : "[text-shadow:0_1px_1px_rgb(255_255_255/0.4)]"
+    : "";
+  const version = `${bg.type === "image" ? bg.src : JSON.stringify(bg)}:${spent}:${limit}`;
   return (
     <Card.Root
       {...root}
+      background={bg}
       // Your className and style merge with the card's own, as values or functions of its state;
       // your style wins, so you can override the palette variables (--card-bg, --card-ink, …).
       className={(state) =>
@@ -127,8 +112,9 @@ export function PaymentCard({
           {/* The faces ignore the pointer: turned by the tilt, they would sit in front of the flip
               button in 3D and take its clicks. Nothing on them is interactive. */}
           <Card.Body className="pointer-events-none absolute inset-0 [transform:rotateY(calc(var(--card-flipped)*180deg))] transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] transform-3d motion-reduce:[transform:none]">
-            <Card.Front className={face} style={{ background: "var(--card-bg)", color: "var(--card-ink)" }}>
-              <Pattern color={d.line} />
+            <Card.Front className={`${face} ${lift}`} style={{ color: "var(--card-ink)" }}>
+              <Card.Background loading={active ? "eager" : "lazy"} className="absolute inset-0" />
+              {!artwork && <Pattern color={d.line} />}
               <div className="absolute inset-x-[6.5cqw] top-[6cqw] flex items-start justify-between">
                 <span className="text-[5cqw] leading-none font-extrabold tracking-tight">{brand}</span>
                 <span className="text-[3cqw] leading-none font-semibold tracking-[0.18em] text-[var(--card-sub)] uppercase">
@@ -170,14 +156,15 @@ export function PaymentCard({
                     "radial-gradient(circle at calc(var(--card-pointer-x) * 100%) calc(var(--card-pointer-y) * 100%), rgb(255 255 255 / 0.55), transparent 55%)",
                 }}
               />
-              <Frost webgl={active} stops={d.stops} version={version} />
+              <Frost webgl={active} version={version} />
             </Card.Front>
 
             <Card.Back
               className={`${face} [transform:rotateY(180deg)] motion-reduce:[transform:none]`}
-              style={{ background: "var(--card-bg)", color: "var(--card-ink)" }}
+              style={{ color: "var(--card-ink)" }}
             >
-              <Pattern color={d.line} />
+              <Card.Background loading="lazy" className="absolute inset-0" />
+              {!artwork && <Pattern color={d.line} />}
               <div className="absolute inset-x-0 top-[11%] h-[18%] bg-[#111]" />
               <div className="absolute inset-x-[6.5%] top-[40%] flex items-center gap-[4%]">
                 <div className="h-[2.1em] flex-1 rounded-[3px] bg-[repeating-linear-gradient(135deg,#f4f4f4_0_6px,#e6e6e6_6px_12px)]" />
@@ -188,8 +175,9 @@ export function PaymentCard({
               </div>
               <p className="absolute inset-x-[6.5cqw] bottom-[6cqw] text-[2.7cqw] leading-snug text-[var(--card-sub)]">
                 Demo card. The number fails the Luhn check.
+                {bg.type === "image" && bg.credit ? ` Artwork: ${bg.credit}.` : ""}
               </p>
-              <Frost webgl={active} stops={d.stops} version={`${version}:back`} />
+              <Frost webgl={active} version={`${version}:back`} />
             </Card.Back>
           </Card.Body>
           {/* The flip button sits over the card instead of wrapping it, so its name is just its

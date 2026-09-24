@@ -7,9 +7,18 @@
       "name": "payment-card",
       "type": "registry:component",
       "title": "Payment card",
-      "description": "A styled card on the cardstock primitives: tilt with glare, flip, a decoding number, spending bar and WebGL frost.",
+      "description": "A styled card on the cardstock primitives: any background, tilt with glare, flip, a decoding number, spending bar and WebGL frost.",
       "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
+      "registryDependencies": ["https://cardstock.danolekh.com/r/card-backgrounds.json"],
       "files": [{ "path": "registry/cardstock/payment-card.tsx", "type": "registry:component" }]
+    },
+    {
+      "name": "card-backgrounds",
+      "type": "registry:lib",
+      "title": "Card backgrounds",
+      "description": "Gradient presets and original artwork (guilloché, holo, aurora, topo, steel and more) as storable CardBackground data.",
+      "dependencies": ["@danolekh/cardstock"],
+      "files": [{ "path": "registry/cardstock/backgrounds.ts", "type": "registry:lib" }]
     },
     {
       "name": "card-carousel",

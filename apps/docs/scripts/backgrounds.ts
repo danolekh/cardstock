@@ -191,16 +191,17 @@ function topo() {
 
 function tide() {
   const rnd = random(23);
+  // Deep water throughout: light text sits on every band, the bottom one included.
   const shades = [
-    "#0a2a3a",
-    "#0d3a4c",
-    "#12505f",
-    "#186a73",
-    "#1f8584",
-    "#3aa39a",
-    "#6cc2b3",
-    "#a7dccd",
-    "#e2f1e8",
+    "#08212e",
+    "#0b2d3c",
+    "#0e394a",
+    "#124757",
+    "#165663",
+    "#1b6570",
+    "#20747c",
+    "#268389",
+    "#2d9294",
   ];
   const bands = shades.map((color, k) => {
     const base = 120 + k * 112;
@@ -273,7 +274,7 @@ const COMPOSITIONS: Record<string, () => string> = {
     mesh(
       "#050b1a",
       [
-        ["#11d3a4", 0.28, 0.72, 0.62, 0.42],
+        ["#0a9c7c", 0.28, 0.72, 0.62, 0.42],
         ["#1f7bff", 0.58, 0.3, 0.7, 0.5],
         ["#8a3dff", 0.9, 0.62, 0.52, 0.6],
         ["#0b2a6b", 0.1, 0.15, 0.5, 0.5],
@@ -285,9 +286,9 @@ const COMPOSITIONS: Record<string, () => string> = {
     mesh(
       "#2a0f2e",
       [
-        ["#ff8a4c", 0.2, 0.85, 0.7, 0.6],
-        ["#ff4f7b", 0.55, 0.55, 0.6, 0.55],
-        ["#ffc27a", 0.05, 0.35, 0.4, 0.5],
+        ["#e2582c", 0.2, 0.85, 0.7, 0.6],
+        ["#d93a68", 0.55, 0.55, 0.6, 0.55],
+        ["#f08a45", 0.05, 0.35, 0.4, 0.5],
         ["#6b2a8f", 0.88, 0.2, 0.6, 0.6],
       ],
       140,

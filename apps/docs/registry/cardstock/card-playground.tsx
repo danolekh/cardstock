@@ -3,14 +3,24 @@ import { Switch } from "@base-ui/react/switch";
 import type * as React from "react";
 import { useState } from "react";
 
+import { BACKGROUNDS, type BackgroundName } from "./backgrounds";
 import { CardSwiper } from "./card-carousel";
 import { LimitField } from "./limit-field";
-import { type CardDesign, DESIGNS, PaymentCard } from "./payment-card";
+import { PaymentCard } from "./payment-card";
 
-/* Everything together: four designs in the swiper, each card with its own freeze, one reveal and
+/* Everything together: gradient and artwork backgrounds in the swiper, each card with its own freeze, one reveal and
  * flip for the card in the middle, and the limit. */
 
-const KEYS = Object.keys(DESIGNS) as CardDesign[];
+const KEYS: BackgroundName[] = [
+  "ink",
+  "holo",
+  "guilloche",
+  "paper",
+  "aurora",
+  "topo",
+  "ember",
+  "guilloche-sand",
+];
 const DEMO = {
   number: "4821 5903 2716 4822",
   holder: "Max Mustermann",
@@ -23,7 +33,7 @@ export function CardPlayground(): React.ReactElement {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [frozen, setFrozen] = useState<ReadonlySet<CardDesign>>(new Set());
+  const [frozen, setFrozen] = useState<ReadonlySet<BackgroundName>>(new Set());
   const [limit, setLimit] = useState(1200);
   const current = KEYS[index] ?? "ink";
   const isFrozen = frozen.has(current);
@@ -44,7 +54,7 @@ export function CardPlayground(): React.ReactElement {
   return (
     <div className="not-prose border-fd-border bg-fd-card text-fd-card-foreground w-full overflow-hidden rounded-2xl border">
       <div className="px-6 py-10">
-        <CardSwiper index={index} onIndexChange={choose} labels={KEYS.map((k) => DESIGNS[k].label)}>
+        <CardSwiper index={index} onIndexChange={choose} labels={KEYS.map((k) => BACKGROUNDS[k].label)}>
           {(i, active) => {
             const design = KEYS[i] ?? "ink";
             return (
