@@ -8,7 +8,7 @@ The parts render plain elements and report their state as `data-*` attributes an
 pnpm add @danolekh/cardstock @base-ui/react
 ```
 
-**Status:** 0.1.0, pre-1.0 (a minor version may change the API). React 19, `@base-ui/react` ^1.8, ESM only.
+**Status:** 0.2.0, pre-1.0 (a minor version may change the API). React 19, `@base-ui/react` ^1.8, ESM only.
 
 ```tsx
 import { Card } from "@danolekh/cardstock";

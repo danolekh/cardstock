@@ -48,7 +48,7 @@ function Home() {
               <code className="border-fd-border rounded-lg border px-3 py-2 font-mono text-xs">
                 pnpm add @danolekh/cardstock @base-ui/react
               </code>
-              <span className="text-fd-muted-foreground text-xs">v0.1.0</span>
+              <span className="text-fd-muted-foreground text-xs">v0.2.0</span>
             </div>
           </div>
           <CardPlayground />
