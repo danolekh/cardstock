@@ -4,6 +4,7 @@ import { createContext, useContext, useMemo, useSyncExternalStore } from "react"
 
 import type { CardBackground } from "../background/background";
 import type { Progress, Walk } from "../utils/progress";
+import type { CardFlipOrigin } from "./flip";
 import type { CardStatus } from "./status";
 
 export interface CardContextValue {
@@ -18,6 +19,11 @@ export interface CardContextValue {
   reveal: Progress;
   /** 0..1 as the card freezes; drives `<Frost />`. */
   freeze: Progress;
+  /** 0..1 as the card turns over, linear in time; drives `Card.Body`'s flip. */
+  flip: Progress;
+  /** Where the next flip was started from, for the `toward` style: set by `Card.FlipTrigger` on
+   * a press, read by `Card.Body` as the turn begins. */
+  flipOrigin: { get: () => CardFlipOrigin; set: (origin: CardFlipOrigin) => void };
   revealTiming: Walk;
   reducedMotion: boolean;
   /** How the card stands, for display: see `Card.Status`. */

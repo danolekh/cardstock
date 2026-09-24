@@ -5,33 +5,29 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { frostBase } from "../background/background";
 import { useCard } from "../card/context";
 import { createFrost, snapshotFace, type Stop } from "./shader";
+import { FILL, FROST_VEIL, useFreezeOpacity } from "./veil";
 
 export interface FrostProps {
-  /** Use the WebGL2 shader. `false` draws the light gradient, which holds no WebGL context. */
-  webgl?: boolean;
   /** The face's background as gradient stops (drawn at 135deg). By default the card's
    * `background`, or else the face's background colour. */
   stops?: readonly Stop[];
   /** Change it whenever the face looks different (a new number, colour or limit) to retake the
    * snapshot the frost refracts. */
   version?: string | number;
-  /** The fallback gradient. */
-  fallback?: string;
   className?: string;
 }
 
-const FALLBACK =
-  "linear-gradient(120deg, rgba(222,238,255,0.72), rgba(236,245,255,0.55) 45%, rgba(248,251,255,0.75))";
-const FILL: React.CSSProperties = { position: "absolute", inset: 0, pointerEvents: "none" };
 const dpr = () => Math.min(window.devicePixelRatio || 1, 2);
 /** A lost context is rebuilt once; a second loss this soon after means the GPU won't keep one. */
 const LOSS_WINDOW_MS = 10_000;
 
-/** Frosts the face it sits in as the card freezes. Put it inside `Card.Front` or `Card.Back`,
- * after the content it should cover; the face needs `position: relative` and `overflow: hidden`.
- * Renders a `<div>` over the face with a canvas and the fallback in it. */
+/** Frosts the face it sits in as the card freezes, with a WebGL2 shader that refracts a snapshot
+ * of the face. Put it inside `Card.Front` or `Card.Back`, after the content it should cover; the
+ * face needs `position: relative` and `overflow: hidden`. Each one holds a GPU context while it's
+ * mounted, so cards out of focus should use `<FrostVeil />`. Where WebGL2 isn't there, or keeps
+ * losing its context, it shows the veil itself. Renders a `<div>` over the face with a canvas. */
 export function Frost(props: FrostProps): React.ReactElement {
-  const { webgl = true, stops = [], version = "", fallback = FALLBACK, className } = props;
+  const { stops = [], version = "", className } = props;
   const { freeze, background } = useCard();
   const base = stops.length
     ? ({ kind: "linear", angle: 135, stops } as const)
@@ -41,7 +37,6 @@ export function Frost(props: FrostProps): React.ReactElement {
   // Compared by value: a new background (or new stops) retakes the snapshot.
   const baseKey = JSON.stringify(base ?? null);
   const hostRef = useRef<HTMLDivElement>(null);
-  const gradientRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   // Bumped when the browser takes the WebGL context away, to start over on a fresh canvas.
@@ -67,7 +62,7 @@ export function Frost(props: FrostProps): React.ReactElement {
       else window.clearTimeout(idle);
     };
   }, [armed, freeze]);
-  const useShader = webgl && !failed && armed;
+  const useShader = !failed && armed;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -144,15 +139,9 @@ export function Frost(props: FrostProps): React.ReactElement {
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [version, baseKey, useShader, session]);
 
-  // The gradient follows the freeze directly, and fades out once the shader has taken over.
-  const showGradient = !useShader || !ready;
-  useEffect(() => {
-    const el = gradientRef.current;
-    if (!el) return;
-    const apply = (p: number) => (el.style.opacity = String(showGradient ? p : 0));
-    apply(freeze.get());
-    return freeze.subscribe(apply);
-  }, [freeze, showGradient]);
+  // The veil follows the freeze directly, and fades out once the shader has taken over.
+  const showVeil = !useShader || !ready;
+  const veilRef = useFreezeOpacity(showVeil);
 
   return (
     <div
@@ -164,13 +153,13 @@ export function Frost(props: FrostProps): React.ReactElement {
       style={FILL}
     >
       <div
-        ref={gradientRef}
+        ref={veilRef}
         style={{
           ...FILL,
-          background: fallback,
+          background: FROST_VEIL,
           backdropFilter: "blur(2px)",
           opacity: 0,
-          transition: showGradient ? undefined : "opacity 200ms ease",
+          transition: showVeil ? undefined : "opacity 200ms ease",
         }}
       />
     </div>

@@ -6,13 +6,13 @@ Headless, composable bank-card primitives for React: a card that flips and tilts
 
 [![cardstock: watch the 20-second tour](https://cardstock.danolekh.com/cardstock-poster.jpg)](https://cardstock.danolekh.com/cardstock.mp4)
 
-The parts render plain elements and report their state as `data-*` attributes and CSS variables. You choose the styling (Tailwind, CSS, anything) and the animation (CSS, Motion via `render`, or none). The design follows Base UI.
+The card's parts render plain elements and report their state as `data-*` attributes and CSS variables; the carousel comes with a coverflow you tune or turn off. Artwork for the backgrounds isn't in the package: `npx @danolekh/cardstock-backgrounds add holo` downloads it on demand. You choose the styling (Tailwind, CSS, anything) and the animation (CSS, Motion via `render`, or none). The design follows Base UI.
 
 ```bash
 pnpm add @danolekh/cardstock @base-ui/react
 ```
 
-**Status:** 0.2.0, pre-1.0 (a minor version may change the API). React 19, `@base-ui/react` ^1.8, ESM only.
+**Status:** 0.3.0, pre-1.0 (a minor version may change the API). React 19, `@base-ui/react` ^1.8, ESM only.
 
 ```tsx
 import { Card } from "@danolekh/cardstock";

@@ -1,7 +1,13 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["src/index.ts", "src/carousel/index.ts", "src/frost/index.ts", "src/limit/index.ts"],
+  entry: [
+    "src/index.ts",
+    "src/background/index.ts",
+    "src/carousel/index.ts",
+    "src/frost/index.ts",
+    "src/limit/index.ts",
+  ],
   format: "esm",
   platform: "browser",
   target: "es2022",

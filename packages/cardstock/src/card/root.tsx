@@ -8,6 +8,7 @@ import { type PartProps, usePart } from "../utils/part";
 import { type Walk, useProgress } from "../utils/progress";
 import { useControllableState } from "../utils/use-controllable-state";
 import { CardContext, type CardContextValue, createRevealGroupRegistry } from "./context";
+import { type CardFlipOrigin, DEFAULT_ORIGIN } from "./flip";
 import { useRevealTimeout } from "./reveal-group";
 import type { CardStatus } from "./status";
 
@@ -15,6 +16,8 @@ import type { CardStatus } from "./status";
 export const REVEAL_TIMING: Walk = { show: 0.3, hide: 0.15, ease: [0.23, 1, 0.32, 1] };
 /** The freeze is the one moment meant to be watched. */
 export const FREEZE_TIMING: Walk = { show: 0.75, hide: 0.75 };
+/** The flip's length each way. The progress runs linearly; each flip style brings its own curve. */
+export const FLIP_TIMING: Walk = { show: 0.75, hide: 0.75 };
 
 export interface CardRootState extends Record<string, unknown> {
   flipped: boolean;
@@ -49,6 +52,9 @@ export interface CardRootProps extends PartProps<"div", CardRootState> {
   revealTiming?: Walk;
   /** Timing of the freeze progress that drives `<Frost />`. */
   freezeTiming?: Walk;
+  /** Timing of the flip progress that drives `Card.Body`. Keep it linear: the flip styles ease
+   * it themselves. */
+  flipTiming?: Walk;
 }
 
 /** Holds a card's state and shares it with its parts. Renders a `<div>`. */
@@ -68,6 +74,7 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
     background,
     revealTiming = REVEAL_TIMING,
     freezeTiming = FREEZE_TIMING,
+    flipTiming = FLIP_TIMING,
     ...rest
   } = props;
   const [flipped, setFlipped] = useControllableState({
@@ -97,6 +104,11 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
   const reducedMotion = usePrefersReducedMotion();
   const reveal = useProgress(revealed, revealTiming, reducedMotion);
   const freeze = useProgress(frozen, freezeTiming, reducedMotion);
+  const flip = useProgress(flipped, flipTiming, reducedMotion);
+  const [flipOrigin] = useState(() => {
+    let origin: CardFlipOrigin = DEFAULT_ORIGIN;
+    return { get: () => origin, set: (next: CardFlipOrigin) => void (origin = next) };
+  });
 
   const context = useMemo<CardContextValue>(
     () => ({
@@ -108,6 +120,8 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
       setRevealed,
       reveal,
       freeze,
+      flip,
+      flipOrigin,
       revealTiming,
       reducedMotion,
       revealGroups,
@@ -123,6 +137,8 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
       setRevealed,
       reveal,
       freeze,
+      flip,
+      flipOrigin,
       revealTiming,
       reducedMotion,
       revealGroups,

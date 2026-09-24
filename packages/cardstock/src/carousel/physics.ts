@@ -69,3 +69,13 @@ export function snapTarget({
   target = Math.max(index - 1, Math.min(index + 1, target));
   return Math.max(0, Math.min(count - 1, target));
 }
+
+/** Release speed in px/s from the pointer's recent samples (`[time ms, x]`, oldest first): the
+ * distance over the last `window` ms, so a pause before letting go reads as no speed. */
+export function releaseVelocity(samples: readonly (readonly [number, number])[], window = 100): number {
+  const last = samples.at(-1);
+  if (!last) return 0;
+  const first = samples.find(([t]) => last[0] - t <= window) ?? last;
+  const dt = (last[0] - first[0]) / 1000;
+  return dt > 0 ? (last[1] - first[1]) / dt : 0;
+}
