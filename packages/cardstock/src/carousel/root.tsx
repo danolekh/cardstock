@@ -12,7 +12,7 @@ import {
   CarouselMotionContext,
   type CarouselMotionContextValue,
 } from "./context";
-import { type CarouselEffect, effectVars } from "./effect";
+import { type CarouselEffect, effectVars, registerCarouselProperties } from "./effect";
 import { type CardCarouselLabels, DEFAULT_CAROUSEL_LABELS } from "./labels";
 import { createCarouselMotion } from "./motion";
 import { DEFAULT_SPRING, type SpringConfig, snapTarget } from "./physics";
@@ -92,6 +92,8 @@ export function CardCarouselRoot(props: CardCarouselRootProps): React.ReactEleme
   const dragging = useSyncExternalStore(motion.dragging.subscribe, motion.dragging.get, () => false);
   const pending = useRef(0); // release speed the next glide carries
   const id = useId();
+
+  useIsoLayoutEffect(registerCarouselProperties, []);
 
   // The moving position never goes through React: set once, then written every frame.
   const [initialStyle] = useState(() => ({ "--carousel-position": index }) as React.CSSProperties);

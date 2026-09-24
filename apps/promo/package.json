@@ -6,7 +6,8 @@
     "stage": "vite",
     "record": "node record/record.ts",
     "encode": "node record/encode.ts",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "perf": "node record/perf.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.8.0",

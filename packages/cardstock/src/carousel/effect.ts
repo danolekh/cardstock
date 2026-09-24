@@ -45,16 +45,50 @@ export const COVERFLOW_SLIDE: React.CSSProperties = {
   opacity: "calc(1 - var(--slide-distance) * var(--carousel-fade))",
 };
 
+/** The variables written every frame. Registered as numbers that don't inherit: an inherited one
+ * changing restyles every element under it, and with a few cards on the track that's hundreds
+ * of elements a frame, enough to drop frames on a slower machine. The slides read their own, and
+ * anything deeper that wants one takes it with `--slide-distance: inherit`. */
+export const MOVING_PROPERTIES = [
+  "--carousel-position",
+  "--slide-offset",
+  "--slide-offset-clamped",
+  "--slide-distance",
+] as const;
+
+let registered = false;
+
+/** Registers `MOVING_PROPERTIES` once per page, where the browser can. */
+export function registerCarouselProperties(): void {
+  if (registered) return;
+  registered = true;
+  if (typeof CSS === "undefined" || !("registerProperty" in CSS)) return;
+  for (const name of MOVING_PROPERTIES) {
+    try {
+      CSS.registerProperty({ name, syntax: "<number>", inherits: false, initialValue: "0" });
+    } catch {
+      // Already registered: another copy of cardstock on the page, a hot reload, or your own
+      // `@property`. Whichever came first stands.
+    }
+  }
+}
+
+const written = new WeakMap<HTMLElement, { z: string; visibility: string }>();
+
 /** Per frame, for one slide: the variables every look reads, and with the coverflow the stacking
- * (nearest on top) and slides far off hidden. */
+ * (nearest on top) and slides far off hidden, written only when they change. */
 export function writeSlide(el: HTMLElement, offset: number, effect: CarouselEffect): void {
   const distance = Math.min(1, Math.abs(offset));
   el.style.setProperty("--slide-offset", String(offset));
   el.style.setProperty("--slide-offset-clamped", String(Math.max(-1, Math.min(1, offset))));
   el.style.setProperty("--slide-distance", String(distance));
   if (effect !== "coverflow") return;
-  el.style.zIndex = String(100 - Math.round(Math.abs(offset) * 10));
-  el.style.visibility = Math.abs(offset) > 2 ? "hidden" : "";
+  const z = String(100 - Math.round(Math.abs(offset) * 10));
+  const visibility = Math.abs(offset) > 2 ? "hidden" : "";
+  const last = written.get(el);
+  if (last?.z !== z) el.style.zIndex = z;
+  if (last?.visibility !== visibility) el.style.visibility = visibility;
+  written.set(el, { z, visibility });
 }
 
 export const slideVars = (offset: number): React.CSSProperties =>

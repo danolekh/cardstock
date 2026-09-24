@@ -33,6 +33,7 @@ The carousel now lays the slides out itself, as a coverflow drawn in 2D so artwo
 - The settle starts before the frame that shows the new index.
 - Previous and Next are no longer disabled, and slides no longer read "1 of 0", in server-rendered HTML.
 - A drag no longer re-renders every part of the carousel.
+- A swipe restyles only the slides: the moving variables are registered as non-inheriting numbers, so they no longer restyle every element on every card each frame (from about 700 elements and 3ms a frame to 9 and 0.3ms on the docs playground; at 4× CPU throttle, from about 95 to 118 fps). To read one inside a slide, copy it into your own variable on the slide.
 
 ### Flip
 

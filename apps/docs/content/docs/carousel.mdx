@@ -75,6 +75,21 @@ The styles are the parts' own inline styles, so your `style` wins property by pr
 
 Tie anything else to `--carousel-position`, such as a backdrop colour that blends as you swipe. In JavaScript, `useCarouselPosition()` gives the same number to subscribe to, without re-rendering.
 
+### Reading them deeper down
+
+The four moving variables (`--carousel-position` and the three on each slide) are registered as numbers that don't inherit. An inherited variable that changes every frame restyles every element under it, and with a few cards on the track that's hundreds of elements a frame, enough to drop frames on a slower machine; this way a swipe restyles only the slides. Style the slides themselves with them, as above. To use one deeper inside a slide, copy it into a variable of your own on the slide, which does inherit:
+
+```css
+[data-slot="carousel-slide"] {
+  --distance: var(--slide-distance);
+}
+.card-shine {
+  opacity: calc(1 - var(--distance));
+}
+```
+
+Everything under the slide then restyles every frame again, so copy only what you use, onto the smallest part that needs it.
+
 ## Slide content
 
 A slide's children can be a function of its state, or read it with `useCarouselSlide()` anywhere inside:

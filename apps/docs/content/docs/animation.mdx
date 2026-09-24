@@ -43,6 +43,10 @@ function Body({ children }) {
 
 For per-frame values, subscribe instead of re-rendering. `useCard().reveal`, `useCard().freeze` and `useCard().flip` are progress objects with `get()` and `subscribe(fn)`, and `useCarouselPosition()` works the same way.
 
+## Performance
+
+What moves every frame is a CSS variable the library writes without re-rendering: the carousel's position, a slide's offset, the tilt, the flip. The carousel's are registered as non-inheriting numbers, so a swipe restyles only the slides, not every card on the track (see [reading them deeper down](/docs/carousel#reading-them-deeper-down)). If you animate something of your own on a variable, set it on the element that moves, not on a wrapper around many.
+
 ## Reduced motion
 
 The parts respect `prefers-reduced-motion`:
