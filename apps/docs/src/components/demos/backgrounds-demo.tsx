@@ -3,7 +3,8 @@ import { RadioGroup } from "@base-ui/react/radio-group";
 import { Card } from "@danolekh/cardstock";
 import { useState } from "react";
 
-import { BACKGROUNDS, type BackgroundName } from "../../../registry/cardstock/backgrounds";
+import { BACKGROUNDS, type BackgroundName } from "@/lib/backgrounds";
+
 import { PaymentCard } from "../../../registry/cardstock/payment-card";
 
 const NAMES = Object.keys(BACKGROUNDS) as BackgroundName[];

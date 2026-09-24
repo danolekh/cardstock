@@ -10,14 +10,16 @@ description: What the parts do for keyboard and screen-reader users, and what's 
 - **Number:** screen readers hear "Card number ending in 4822", or the whole number once revealed, never the scramble. The cells are `aria-hidden`.
 - **Spending** is a `meter` whose spoken value uses your `format`.
 - **Carousel** follows the [APG carousel pattern](https://www.w3.org/WAI/ARIA/apg/patterns/carousel/):
-  - the viewport is a region with the role description "carousel", and ←/→ move between cards;
-  - each slide is a group labelled "2 of 4";
-  - slides that aren't current are `aria-hidden`.
+  - the viewport is a focusable region labelled "Cards", with the role description "carousel"; ←/→ move between cards (mirrored right to left) and Home/End go to the ends;
+  - each slide is a group labelled "Premium, 2 of 4";
+  - slides that aren't current are `inert`: hidden from screen readers and out of the tab order;
+  - `CardCarousel.Indicators` is a tablist, each slide its tab's panel;
+  - the track is a polite live region, so the new card is announced;
+  - every label is in `labels`, to translate.
 - **Motion:** see [reduced motion](/docs/animation#reduced-motion).
 
 ## Left to you
 
-- Give `CardCarousel.Viewport` an `aria-label` and `tabIndex={0}`.
-- Take buttons on slides that aren't current out of the tab order (`tabIndex={-1}`).
+- Translate the carousel's `labels` if your page isn't in English.
 - Announce the frozen state in text next to the card, with `aria-live="polite"`.
 - Keep focus rings visible on the triggers and the flip button.

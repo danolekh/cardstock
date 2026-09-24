@@ -4,3 +4,5 @@ dist
 .DS_Store
 .wrangler
 *.tgz
+apps/promo/out
+apps/promo/.frames

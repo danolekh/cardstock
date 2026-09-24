@@ -1,26 +1,19 @@
 "use client";
 import { Switch } from "@base-ui/react/switch";
+import type { CardBackground } from "@danolekh/cardstock";
 import type * as React from "react";
 import { useState } from "react";
 
-import { BACKGROUNDS, type BackgroundName } from "./backgrounds";
 import { CardSwiper } from "./card-carousel";
 import { LimitField } from "./limit-field";
-import { PaymentCard } from "./payment-card";
+import { DESIGNS, PaymentCard } from "./payment-card";
 
-/* Everything together: gradient and artwork backgrounds in the swiper, each card with its own freeze, one reveal and
- * flip for the card in the middle, and the limit. */
+/* Everything together: a card per background in the swiper, each with its own freeze, one reveal
+ * and flip for the card in the middle, and the limit. Pass your own `backgrounds` (say, the ones
+ * `npx @danolekh/cardstock-backgrounds add` wrote for you); by default it's the four gradients. */
 
-const KEYS: BackgroundName[] = [
-  "ink",
-  "holo",
-  "guilloche",
-  "paper",
-  "aurora",
-  "topo",
-  "ember",
-  "guilloche-sand",
-];
+type Backgrounds = Record<string, CardBackground & { label: string }>;
+
 const DEMO = {
   number: "4821 5903 2716 4822",
   holder: "Max Mustermann",
@@ -29,13 +22,14 @@ const DEMO = {
 };
 const SPENT = 842;
 
-export function CardPlayground(): React.ReactElement {
+export function CardPlayground({ backgrounds = DESIGNS }: { backgrounds?: Backgrounds }): React.ReactElement {
+  const keys = Object.keys(backgrounds);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [frozen, setFrozen] = useState<ReadonlySet<BackgroundName>>(new Set());
+  const [frozen, setFrozen] = useState<ReadonlySet<string>>(new Set());
   const [limit, setLimit] = useState(1200);
-  const current = KEYS[index] ?? "ink";
+  const current = keys[index] ?? "";
   const isFrozen = frozen.has(current);
 
   const choose = (i: number) => {
@@ -54,19 +48,19 @@ export function CardPlayground(): React.ReactElement {
   return (
     <div className="not-prose border-fd-border bg-fd-card text-fd-card-foreground w-full overflow-hidden rounded-2xl border">
       <div className="px-6 py-10">
-        <CardSwiper index={index} onIndexChange={choose} labels={KEYS.map((k) => BACKGROUNDS[k].label)}>
+        <CardSwiper index={index} onIndexChange={choose} labels={keys.map((k) => backgrounds[k]!.label)}>
           {(i, active) => {
-            const design = KEYS[i] ?? "ink";
+            const key = keys[i] ?? "";
             return (
               <PaymentCard
                 {...DEMO}
-                design={design}
+                background={backgrounds[key]}
                 active={active}
                 flipped={active && flipped}
                 onFlippedChange={active ? setFlipped : undefined}
                 revealed={active && revealed}
                 onRevealedChange={setRevealed}
-                frozen={frozen.has(design)}
+                frozen={frozen.has(key)}
                 onFrozenChange={(on) => (active ? freeze(on) : undefined)}
                 spent={SPENT}
                 limit={limit}

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 
+import { PLAYGROUND_BACKGROUNDS } from "@/lib/backgrounds";
 import { baseOptions } from "@/lib/layout.shared";
 
 import { CardPlayground } from "../../registry/cardstock/card-playground";
@@ -51,7 +52,7 @@ function Home() {
               <span className="text-fd-muted-foreground text-xs">v0.2.0</span>
             </div>
           </div>
-          <CardPlayground />
+          <CardPlayground backgrounds={PLAYGROUND_BACKGROUNDS} />
         </section>
         <section className="border-fd-border grid gap-6 border-t border-dashed pt-10 sm:grid-cols-3">
           {features.map(([title, body]) => (

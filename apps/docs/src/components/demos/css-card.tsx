@@ -41,7 +41,7 @@ export function CssCard() {
     <Card.Root className="css-card">
       <style>{css}</style>
       <div className="stage">
-        <Card.Body>
+        <Card.Body effect="none">
           <Card.Front>
             <Card.Number value="4821 5903 2716 4822" reveal="none" />
             <Card.Holder>MAX MUSTERMANN</Card.Holder>

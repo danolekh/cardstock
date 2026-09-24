@@ -27,7 +27,7 @@ pnpm dlx shadcn@latest add https://cardstock.danolekh.com/r/payment-card.json
 
 |                  |                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------- |
-| Version          | 0.2.0. Before 1.0, a minor version may change the API.                                                |
+| Version          | 0.3.0. Before 1.0, a minor version may change the API.                                                |
 | React            | 19                                                                                                    |
 | `@base-ui/react` | ^1.8 (peer dependency)                                                                                |
 | Module format    | ESM only                                                                                              |
@@ -43,12 +43,14 @@ The styled components on these pages are a [shadcn registry](https://ui.shadcn.c
 pnpm dlx shadcn@latest add https://cardstock.danolekh.com/r/payment-card.json
 ```
 
-| Item              | What it is                                                                 |
-| ----------------- | -------------------------------------------------------------------------- |
-| `payment-card`    | A card with tilt and glare, flip, decoding number, spending bar and frost. |
-| `card-carousel`   | The swiper: spring snap and 3D neighbours, written in CSS.                 |
-| `limit-field`     | A currency limit you change by dragging, on Base UI's `NumberField`.       |
-| `card-playground` | All of them together, as on the front page.                                |
+| Item           | What it is                                                                 |
+| -------------- | -------------------------------------------------------------------------- |
+| `payment-card` | A card with tilt and glare, flip, decoding number, spending bar and frost. |
+
+The card comes with four gradients. For artwork, `npx @danolekh/cardstock-backgrounds add holo guilloche` downloads it into your app; see [backgrounds](/docs/backgrounds).
+| `card-carousel` | The swiper: the carousel's coverflow with tabs underneath. |
+| `limit-field` | A currency limit you change by dragging, on Base UI's `NumberField`. |
+| `card-playground` | All of them together, as on the front page. |
 
 <Callout>
   The registry components use `fd-*` colour tokens from these docs (`bg-fd-muted`, `border-fd-border`). Swap

@@ -1,7 +1,7 @@
 {
   "name": "@danolekh/cardstock",
-  "version": "0.2.0",
-  "description": "Headless, composable bank-card primitives for React: flip, tilt, storable backgrounds, masked number reveal with timeouts and copy, freeze, statuses, spending meter, limit field and a swipeable card carousel.",
+  "version": "0.4.0",
+  "description": "Headless, composable bank-card primitives for React: flip, tilt, storable backgrounds and live shader backgrounds, masked number reveal with timeouts and copy, freeze, statuses, spending meter, limit field and a swipeable card carousel.",
   "keywords": [
     "base-ui",
     "card",
@@ -20,15 +20,19 @@
     "directory": "packages/cardstock"
   },
   "files": [
-    "dist"
+    "dist",
+    "NOTICE",
+    "licenses"
   ],
   "type": "module",
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.js",
+    "./background": "./dist/background/index.js",
     "./carousel": "./dist/carousel/index.js",
     "./frost": "./dist/frost/index.js",
     "./limit": "./dist/limit/index.js",
+    "./shader": "./dist/shader/index.js",
     "./package.json": "./package.json"
   },
   "scripts": {

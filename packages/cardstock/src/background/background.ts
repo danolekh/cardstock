@@ -49,7 +49,69 @@ export interface ImageBackground extends BackgroundBase {
   credit?: string;
 }
 
-export type CardBackground = SolidBackground | LinearBackground | RadialBackground | ImageBackground;
+/** A parameter's value: a number, a colour (hex or rgb()), or a short list of either. */
+export type ShaderParamValue = number | string | readonly number[] | readonly string[];
+
+export interface ShaderBackground extends BackgroundBase {
+  type: "shader";
+  /** Which shader: a built-in id (`"silk"`), or your own namespaced one (`"acme/tide"`) registered
+   * with <ShaderLibrary>. The GLSL itself never travels in the data. */
+  shader: string;
+  /** Its parameters, by name. Unknown names are ignored and values are clamped when it renders. */
+  params?: Readonly<Record<string, ShaderParamValue>>;
+  /** How fast its time runs, 0..4; 1 by default. */
+  speed?: number;
+  /** Its dominant colour: shown until the first frame (and without WebGL), and under the frost. */
+  color: string;
+  /** A still of it, shown until the first frame and whenever it can't render. */
+  poster?: string;
+  /** Other widths of the poster. */
+  posterSrcSet?: string;
+  /** Which part of the poster stays in view (CSS `object-position`). */
+  position?: string;
+  /** Attribution, for shaders that ask for it. */
+  credit?: string;
+}
+
+export type CardBackground =
+  | SolidBackground
+  | LinearBackground
+  | RadialBackground
+  | ImageBackground
+  | ShaderBackground;
+
+/** The shaders that ship with `@danolekh/cardstock/shader`. */
+export const BUILT_IN_SHADERS: readonly [
+  "singularity",
+  "silk",
+  "mesh",
+  "grain",
+  "liquid-metal",
+  "holo-foil",
+  "flow-dots",
+  "guilloche",
+] = ["singularity", "silk", "mesh", "grain", "liquid-metal", "holo-foil", "flow-dots", "guilloche"];
+export type BuiltInShader = (typeof BUILT_IN_SHADERS)[number];
+
+/** Each built-in shader's parameters. The ranges and defaults live with the shader; see the docs. */
+export interface ShaderParamsById {
+  singularity: { zoom?: number; hue?: number };
+  silk: { colors?: readonly string[]; turbulence?: number; scale?: number };
+  mesh: { colors?: readonly string[]; distortion?: number; swirl?: number; grain?: number };
+  grain: { colors?: readonly string[]; softness?: number; noise?: number };
+  "liquid-metal": { tint?: string; bands?: number; distortion?: number };
+  "holo-foil": { base?: string; intensity?: number; bands?: number };
+  "flow-dots": { dot?: string; spacing?: number; drift?: number };
+  guilloche: { ink?: string; lines?: number; petals?: number };
+}
+
+/** A built-in shader background, with its parameters type-checked. Pure data: safe on a server. */
+export function shaderBackground<K extends BuiltInShader>(
+  shader: K,
+  init: Omit<ShaderBackground, "type" | "shader" | "params"> & { params?: ShaderParamsById[K] },
+): ShaderBackground {
+  return { type: "shader", shader, ...init } as ShaderBackground;
+}
 
 const MAX_STOPS = 8;
 // Hex, a colour function of plain numbers, or a keyword. No url(), var() or anything that could
@@ -58,6 +120,10 @@ const COLOR = /^(?:#[0-9a-f]{3,8}|(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\
 const URL_PATTERN = /^(?:https:\/\/|\/(?!\/))[^\s"'()\\<>]*$/i;
 const DATA_IMAGE = /^data:image\/(?:png|jpeg|webp|avif|gif);base64,[a-z0-9+/=]+$/i;
 const POSITION = /^[a-z0-9\s.%-]{1,40}$/i;
+const SHADER_ID = /^[a-z0-9][a-z0-9-]{0,63}(?:\/[a-z0-9][a-z0-9-]{0,63})?$/;
+const PARAM_NAME = /^[a-zA-Z]\w{0,31}$/;
+const MAX_PARAMS = 16;
+const MAX_PARAM_ITEMS = 8;
 
 const isColor = (v: unknown): v is string => typeof v === "string" && v.length <= 64 && COLOR.test(v.trim());
 const isUrl = (v: unknown): v is string =>
@@ -74,6 +140,29 @@ const isSrcSet = (v: unknown): v is string =>
       (!descriptor || /^\d+(?:\.\d+)?[wx]$/.test(descriptor))
     );
   });
+
+const isParamNumber = (v: unknown): v is number =>
+  typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1e4;
+// A shader colour becomes a vec3, so it must be something parseRgb reads.
+const isParamColor = (v: unknown): v is string =>
+  typeof v === "string" && v.length <= 64 && parseRgb(v) !== null;
+
+function parseParams(v: unknown): Record<string, ShaderParamValue> | null {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return null;
+  const entries = Object.entries(v);
+  if (entries.length > MAX_PARAMS) return null;
+  const params: Record<string, ShaderParamValue> = {};
+  for (const [name, value] of entries) {
+    if (!PARAM_NAME.test(name)) return null;
+    if (isParamNumber(value) || isParamColor(value)) params[name] = value;
+    else if (Array.isArray(value) && value.length >= 1 && value.length <= MAX_PARAM_ITEMS) {
+      if (value.every(isParamNumber)) params[name] = [...value];
+      else if (value.every(isParamColor)) params[name] = [...value];
+      else return null;
+    } else return null;
+  }
+  return params;
+}
 
 function parseStops(v: unknown): ColorStop[] | null {
   if (!Array.isArray(v) || v.length < 2 || v.length > MAX_STOPS) return null;
@@ -139,6 +228,36 @@ export function parseCardBackground(input: unknown): CardBackground | null {
       }
       return image;
     }
+    case "shader": {
+      if (typeof v.shader !== "string" || !SHADER_ID.test(v.shader) || !isColor(v.color)) return null;
+      const shader: ShaderBackground = { type: "shader", shader: v.shader, color: v.color, ...base };
+      if (v.params !== undefined) {
+        const params = parseParams(v.params);
+        if (!params) return null;
+        shader.params = params;
+      }
+      if (v.speed !== undefined) {
+        if (typeof v.speed !== "number" || !(v.speed >= 0 && v.speed <= 4)) return null;
+        shader.speed = v.speed;
+      }
+      if (v.poster !== undefined) {
+        if (!isUrl(v.poster)) return null;
+        shader.poster = v.poster;
+      }
+      if (v.posterSrcSet !== undefined) {
+        if (!isSrcSet(v.posterSrcSet)) return null;
+        shader.posterSrcSet = v.posterSrcSet;
+      }
+      if (v.position !== undefined) {
+        if (typeof v.position !== "string" || !POSITION.test(v.position)) return null;
+        shader.position = v.position;
+      }
+      if (v.credit !== undefined) {
+        if (typeof v.credit !== "string" || v.credit.length > 200) return null;
+        shader.credit = v.credit;
+      }
+      return shader;
+    }
     default:
       return null;
   }
@@ -197,8 +316,8 @@ export function backgroundInk(bg: CardBackground): string {
 const stopList = (stops: readonly ColorStop[]) =>
   stops.map(([color, at]) => `${color} ${Math.round(at * 1000) / 10}%`).join(", ");
 
-/** The CSS that paints it. An image is drawn by `Card.Background`'s <img>; this gives its colour
- * underneath, for while it loads. */
+/** The CSS that paints it. An image is drawn by `Card.Background`'s <img>, and a shader by
+ * <Shader /> over its poster; this gives the colour underneath, for while they load. */
 export function backgroundStyle(bg: CardBackground): React.CSSProperties {
   switch (bg.type) {
     case "solid":
@@ -212,6 +331,7 @@ export function backgroundStyle(bg: CardBackground): React.CSSProperties {
       };
     }
     case "image":
+    case "shader":
       return { backgroundColor: bg.color };
   }
 }
@@ -222,7 +342,8 @@ export type FrostBase =
   | { kind: "linear"; angle: number; stops: readonly ColorStop[] }
   | { kind: "radial"; at: readonly [number, number]; stops: readonly ColorStop[] };
 
-/** The frost's base for a background. An image's own pixels come from its <img>. */
+/** The frost's base for a background. An image's own pixels come from its <img>, a shader's from
+ * its canvas. */
 export function frostBase(bg: CardBackground): FrostBase {
   switch (bg.type) {
     case "linear":

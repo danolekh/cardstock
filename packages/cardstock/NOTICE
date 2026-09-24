@@ -1,0 +1,16 @@
+@danolekh/cardstock is MIT licensed (see LICENSE in the repository). It includes third-party
+code under these terms:
+
+src/shader/presets/mesh.ts (dist/shader/presets/mesh.js), the "mesh" shader, is ported and
+modified from Paper Shaders' Mesh Gradient, https://github.com/paper-design/shaders, licensed
+under the Apache License, Version 2.0 (licenses/paper-shaders-Apache-2.0.txt). Paper Shaders'
+NOTICE reads:
+
+  Powered by Paper Shaders:
+  https://shaders.paper.design
+
+src/shader/presets/singularity.ts, the "singularity" shader, is "Singularity" by Xor (@XorDev),
+https://github.com/XorDev/Singularity, under the MIT License.
+
+src/shader/compose.ts includes the GLSL simplex noise of Ian McEwan and Stefan Gustavson
+(Ashima Arts), under the MIT License.

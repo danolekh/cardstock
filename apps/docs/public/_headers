@@ -3,3 +3,8 @@
 /backgrounds/*
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=31536000, immutable
+
+# The list the backgrounds CLI reads changes when artwork is added: short-lived, still CORS.
+/backgrounds/manifest.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300

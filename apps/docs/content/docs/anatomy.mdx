@@ -9,21 +9,23 @@ import { Frost } from "@danolekh/cardstock/frost";
 
 <Card.Root>
   <Card.Tilt>
-    <Card.Body>
-      <Card.Front>
-        <Card.Number value="4821 5903 2716 4822" />
-        <Card.Holder>Max Mustermann</Card.Holder>
-        <Card.Expiry>09/29</Card.Expiry>
-        <Card.Spending value={842} max={1200}>
-          <Card.SpendingIndicator />
-        </Card.Spending>
-        <Frost />
-      </Card.Front>
-      <Card.Back>
-        <Card.SecurityCode value="731" />
-        <Card.FrozenOverlay />
-      </Card.Back>
-    </Card.Body>
+    <Card.TiltSurface>
+      <Card.Body>
+        <Card.Front>
+          <Card.Number value="4821 5903 2716 4822" />
+          <Card.Holder>Max Mustermann</Card.Holder>
+          <Card.Expiry>09/29</Card.Expiry>
+          <Card.Spending value={842} max={1200}>
+            <Card.SpendingIndicator />
+          </Card.Spending>
+          <Frost />
+        </Card.Front>
+        <Card.Back>
+          <Card.SecurityCode value="731" />
+          <Card.FrozenOverlay />
+        </Card.Back>
+      </Card.Body>
+    </Card.TiltSurface>
     <Card.FlipTrigger aria-label="Turn the card over" />
   </Card.Tilt>
   <Card.RevealTrigger />

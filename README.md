@@ -6,10 +6,12 @@ Headless, composable bank-card primitives for React: flip, tilt, a masked number
 
 [![cardstock: watch the 20-second tour](https://cardstock.danolekh.com/cardstock-poster.jpg)](https://cardstock.danolekh.com/cardstock.mp4)
 
-| Path                 | What                                                                                                                                     |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/cardstock` | `@danolekh/cardstock`: the library (tsdown, ESM, no CSS)                                                                                 |
-| `apps/docs`          | Docs on Fumadocs + TanStack Start, prerendered, served as Cloudflare static assets. `registry/` holds the styled shadcn-registry copies. |
+| Path                   | What                                                                                                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/cardstock`   | `@danolekh/cardstock`: the library (tsdown, ESM, no CSS)                                                                                 |
+| `packages/backgrounds` | `@danolekh/cardstock-backgrounds`: a CLI that downloads the house artwork on demand and prerenders your own backgrounds                  |
+| `apps/promo`           | The promo video: a stage of the docs' components and a frame-exact recorder                                                              |
+| `apps/docs`            | Docs on Fumadocs + TanStack Start, prerendered, served as Cloudflare static assets. `registry/` holds the styled shadcn-registry copies. |
 
 ```bash
 pnpm install
@@ -19,4 +21,4 @@ pnpm verify       # lint, format, types, tests and builds, through turbo
 
 The tooling is Turborepo, pnpm, oxlint, oxfmt, tsdown (Rolldown + oxc), Vitest and TypeScript 7.
 
-Releases are automatic (`.github/workflows/release.yml`). After CI passes on `main`, the version in `packages/cardstock/package.json` is published to npm if it isn't there yet, then tagged, and the docs are deployed to Cloudflare. To release, bump the version.
+Releases are automatic (`.github/workflows/release.yml`). After CI passes on `main`, each package whose version isn't on npm yet is published and tagged (`v…` for the library, `backgrounds-v…` for the CLI), and the docs are deployed to Cloudflare. To release, bump a version.

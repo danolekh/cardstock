@@ -58,13 +58,43 @@ A frozen card never shows its details. While `frozen` is set, `revealed` reads `
 
 ## Body and faces
 
-`Card.Body` is the element that turns. It sets `--card-flipped` to `0` or `1`, and the turn itself is up to you:
+`Card.Body` is the element that turns over. Out of the box it turns itself, with a **sheen**: a band of light glides across the face as it turns, and each face darkens as it tilts away from you, both from the live angle, so they never drift out of step.
+
+<ComponentPreview name="flip" />
+
+Two more styles combine with it through `effect`:
+
+- **`lift`**: the card rises before it turns and lands after it, its shadow spreading as it goes. The turn holds still for the first and last 15% of the time, so somebody seems to pick it up.
+- **`toward`**: where you press decides the way it turns. The edge you press rises toward you, and a press in the top or bottom third turns it over top to bottom. The way back retraces it.
+
+```tsx
+<Card.Body>…</Card.Body>                            // the sheen
+<Card.Body effect={["lift", "sheen"]}>…</Card.Body> // lifted, with the sheen
+<Card.Body effect={["toward", "sheen"]}>…</Card.Body>
+<Card.Body effect="none">…</Card.Body>              // your own
+```
+
+The turn takes `flipTiming` on `Card.Root` (750ms each way by default). With reduced motion nothing turns: the faces cross-fade over 200ms. The sheen draws two layers inside each face (`card-sheen-shade`, `card-sheen`), so the faces need `position` and `overflow: hidden`, as a card face usually has.
+
+### Your own flip
+
+With `effect="none"` the body only reports the flip, and the turn is yours. Every frame it writes, on itself:
+
+| Variable                                | Range      | Meaning                                             |
+| --------------------------------------- | ---------- | --------------------------------------------------- |
+| `--card-flip`                           | 0 … 1      | How far the turn has come, linear in time           |
+| `--card-flip-angle`                     | −180 … 180 | The turn in degrees, eased (by the sheen's curve)   |
+| `--card-flip-axis-x`                    | 0 or 1     | 1 when a `toward` press turns it top to bottom      |
+| `--card-flip-direction`                 | 1 or −1    | Which way                                           |
+| `--card-flip-lift`                      | 0 … 1      | Up in the middle of the turn, for `lift`            |
+| `--card-flip-light`, `--card-flip-glow` | 0 … 1      | How edge-on the face is (glow: the same, lingering) |
+| `--card-flip-sheen`                     | 100% … 0%  | The band's `background-position`                    |
+| `--card-flipped`                        | 0 or 1     | Where it's going                                    |
 
 ```css
 [data-slot="card-body"] {
   transform-style: preserve-3d;
-  transform: rotateY(calc(var(--card-flipped) * 180deg));
-  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: rotateY(calc(var(--card-flip-angle) * 1deg)) scale(calc(1 + var(--card-flip-light) * 0.04));
 }
 [data-slot="card-front"],
 [data-slot="card-back"] {
@@ -75,27 +105,44 @@ A frozen card never shows its details. While `frozen` is set, `revealed` reads `
 }
 ```
 
+Or keep it in CSS entirely, with a transition on `--card-flipped` as before, or in JavaScript: `useCard().flip` is the progress (`get()`, `subscribe(fn)`), and `flipFrame(t, styles, origin)` turns it into the same angle, lift and light the built-in styles use.
+
 If `Card.FlipTrigger` lies over the card as a transparent button, give `Card.Body` `pointer-events: none`. Once the card is turned in 3D (by a tilt, for example), the browser can place the faces in front of the button, and they would take its clicks.
 
 `Card.Front` and `Card.Back` carry `data-side` and, on the one facing you, `data-visible`. The face turned away is `inert` and `aria-hidden`, so it's out of the tab order and hidden from screen readers.
 
 ## Tilt
 
-`Card.Tilt` follows the pointer and writes four variables without re-rendering:
+Two parts: `Card.Tilt` is the hit area, which follows the pointer and never moves, and `Card.TiltSurface` inside it is the part that turns.
 
-| Variable                               | Range  | Meaning                             |
-| -------------------------------------- | ------ | ----------------------------------- |
-| `--card-pointer-x`, `--card-pointer-y` | 0 … 1  | Pointer position across the element |
-| `--card-tilt-x`, `--card-tilt-y`       | −1 … 1 | Distance from the middle            |
+```tsx
+<Card.Tilt>
+  <Card.TiltSurface>
+    <Card.Body>…</Card.Body>
+  </Card.TiltSurface>
+  <Card.FlipTrigger aria-label="Turn the card over" />
+</Card.Tilt>
+```
+
+Keep them apart. If the element under the pointer turned, hovering near a corner would swing that corner out from under the pointer; the pointer would leave, the card would swing back under it, the pointer would enter again, and the card would flicker on and off for as long as the pointer rests there (the "doom flicker"). So `Card.Tilt` takes no transform (in development it warns if it has one), and the flip button can sit beside the surface, where it doesn't move either.
+
+`Card.Tilt` writes four variables without re-rendering:
+
+| Variable                               | Range  | Meaning                              |
+| -------------------------------------- | ------ | ------------------------------------ |
+| `--card-pointer-x`, `--card-pointer-y` | 0 … 1  | Pointer position across the hit area |
+| `--card-tilt-x`, `--card-tilt-y`       | −1 … 1 | Distance from the middle             |
+
+`Card.TiltSurface` turns by them out of the box, up to 12° sideways and 10° up and down with a 150ms ease-out. `maxTilt={{ x, y }}` changes the angles and `perspective` (1100 by default, in px) the depth; for a different curve, restyle it:
 
 ```css
-[data-slot="card-tilt"] {
-  transform: rotateX(calc(var(--card-tilt-y) * -10deg)) rotateY(calc(var(--card-tilt-x) * 12deg));
-  transition: transform 150ms ease-out;
+[data-slot="card-tilt-surface"] {
+  transform: rotateX(calc(var(--card-tilt-y) * -6deg)) rotateY(calc(var(--card-tilt-x) * 8deg));
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 ```
 
-`data-hovering` is set while the pointer is over it. Tilt switches itself off (`data-disabled`) for touch screens and for people who prefer reduced motion. Pass `disabled` to switch it off yourself.
+Both carry `data-hovering` while the pointer is over the card. Tilt switches itself off (`data-disabled`) for touch screens and for people who prefer reduced motion. Pass `disabled` to switch it off yourself.
 
 ## Triggers
 

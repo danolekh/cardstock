@@ -15,24 +15,26 @@ Every part renders a single element with a `data-slot` naming it, for example `[
 
 ```tsx
 <Card.Root render={<section />} />
-<Card.Body render={<motion.div animate={{ rotateY: flipped ? 180 : 0 }} />} />
+<Card.Body effect="none" render={<motion.div animate={{ rotateY: flipped ? 180 : 0 }} />} />
 ```
 
 ## Reference
 
-| Part                               | Data attributes                                         | CSS variables                                                  |
-| ---------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------- |
-| `Card.Root`                        | `data-flipped`, `data-frozen`, `data-revealed`          |                                                                |
-| `Card.Tilt`                        | `data-hovering`, `data-disabled`                        | `--card-pointer-x/y`, `--card-tilt-x/y`                        |
-| `Card.Body`                        | `data-flipped`                                          | `--card-flipped`                                               |
-| `Card.Front`, `Card.Back`          | `data-side`, `data-visible`                             |                                                                |
-| Triggers                           | `data-pressed`, `data-disabled`                         |                                                                |
-| `Card.Number`, `Card.SecurityCode` | `data-revealed`, `data-animating`                       | `--char-count`                                                 |
-| their cells                        | `data-char-state`                                       | `--char-index`, `--group-index`                                |
-| `Card.Holder`, `Card.Expiry`       | `data-revealed`                                         |                                                                |
-| `Card.FrozenOverlay`               | `data-open`, `data-starting-style`, `data-ending-style` |                                                                |
-| `Card.Spending`                    | `data-over-limit`                                       | `--card-spending-ratio`                                        |
-| `CardCarousel.Root`                | `data-dragging`                                         | `--carousel-position`                                          |
-| `CardCarousel.Track`               | `data-dragging`                                         |                                                                |
-| `CardCarousel.Slide`               | `data-active`                                           | `--slide-offset`, `--slide-offset-clamped`, `--slide-distance` |
-| `CardCarousel.Indicator`           | `data-active`                                           |                                                                |
+| Part                               | Data attributes                                         | CSS variables                                                                                     |
+| ---------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `Card.Root`                        | `data-flipped`, `data-frozen`, `data-revealed`          |                                                                                                   |
+| `Card.Tilt`                        | `data-hovering`, `data-disabled`                        | `--card-pointer-x/y`, `--card-tilt-x/y`                                                           |
+| `Card.TiltSurface`                 | `data-hovering`, `data-disabled`                        |                                                                                                   |
+| `Card.Body`                        | `data-flipped`                                          | `--card-flipped`, `--card-flip`, `--card-flip-angle/-axis-x/-direction/-lift/-light/-glow/-sheen` |
+| `Card.Front`, `Card.Back`          | `data-side`, `data-visible`                             |                                                                                                   |
+| Triggers                           | `data-pressed`, `data-disabled`                         |                                                                                                   |
+| `Card.Number`, `Card.SecurityCode` | `data-revealed`, `data-animating`                       | `--char-count`                                                                                    |
+| their cells                        | `data-char-state`                                       | `--char-index`, `--group-index`                                                                   |
+| `Card.Holder`, `Card.Expiry`       | `data-revealed`                                         |                                                                                                   |
+| `Card.FrozenOverlay`               | `data-open`, `data-starting-style`, `data-ending-style` |                                                                                                   |
+| `Card.Spending`                    | `data-over-limit`                                       | `--card-spending-ratio`                                                                           |
+| `CardCarousel.Root`                | `data-dragging`, `data-effect`, `data-dir`              | `--carousel-position`, `--carousel-gap/turn/depth/fade/direction`                                 |
+| `CardCarousel.Track`               | `data-dragging`                                         |                                                                                                   |
+| `CardCarousel.Slide`               | `data-active`, `data-side`, `data-index`                | `--slide-offset`, `--slide-offset-clamped`, `--slide-distance`                                    |
+| `CardCarousel.Previous`, `Next`    | `data-disabled`                                         |                                                                                                   |
+| `CardCarousel.Indicator`           | `data-active`                                           |                                                                                                   |

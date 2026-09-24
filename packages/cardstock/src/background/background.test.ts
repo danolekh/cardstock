@@ -7,6 +7,7 @@ import {
   type CardBackground,
   frostBase,
   parseCardBackground,
+  shaderBackground,
 } from "./background";
 
 const ink: CardBackground = {
@@ -82,6 +83,59 @@ describe("parseCardBackground", () => {
     expect(parseCardBackground({ type: "mesh" })).toBeNull();
     expect(parseCardBackground(null)).toBeNull();
     expect(parseCardBackground("ink")).toBeNull();
+  });
+});
+
+describe("shader backgrounds", () => {
+  const silk = shaderBackground("silk", {
+    color: "#1b1530",
+    poster: "/backgrounds/silk.webp",
+    posterSrcSet: "/backgrounds/silk-860.webp 860w, /backgrounds/silk.webp 1720w",
+    params: { colors: ["#7c5cff", "rgb(255, 122, 182)"], turbulence: 0.6 },
+    speed: 0.8,
+    tone: "dark",
+  });
+
+  it("builds data that parses and round-trips through JSON", () => {
+    expect(silk).toMatchObject({ type: "shader", shader: "silk" });
+    expect(parseCardBackground(JSON.parse(JSON.stringify(silk)))).toEqual(silk);
+    expect(parseCardBackground({ type: "shader", shader: "acme/tide", color: "#000" })).toEqual({
+      type: "shader",
+      shader: "acme/tide",
+      color: "#000",
+    });
+  });
+
+  it("rejects bad ids, params, speeds and posters", () => {
+    const bad: Record<string, unknown>[] = [
+      { shader: "Silk" },
+      { shader: "../silk" },
+      { shader: "a/b/c" },
+      { color: undefined },
+      { params: [1] },
+      { params: { "1x": 1 } },
+      { params: { x: Number.NaN } },
+      { params: { x: 1e9 } },
+      { params: { x: "oklch(50% 0 0)" } },
+      { params: { x: "red" } },
+      { params: { x: [1, "#fff"] } },
+      { params: { x: [] } },
+      { params: { x: Array.from({ length: 9 }, () => 1) } },
+      { params: Object.fromEntries(Array.from({ length: 17 }, (_, i) => [`p${i}`, i])) },
+      { speed: 5 },
+      { speed: -1 },
+      { poster: "javascript:alert(1)" },
+      { posterSrcSet: "http://x.test/a.webp 1x" },
+    ];
+    for (const patch of bad) expect(parseCardBackground({ ...silk, ...patch })).toBeNull();
+  });
+
+  it("paints its colour, measures it and hands it to the frost", () => {
+    const plain = { type: "shader", shader: "mesh", color: "#fbf8f1" } as const;
+    expect(backgroundStyle(silk)).toEqual({ backgroundColor: "#1b1530" });
+    expect(backgroundTone(plain)).toBe("light");
+    expect(backgroundInk(silk)).toBe("#ffffff");
+    expect(frostBase(silk)).toEqual({ kind: "solid", color: "#1b1530" });
   });
 });
 

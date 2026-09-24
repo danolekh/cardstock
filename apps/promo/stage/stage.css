@@ -1,0 +1,26 @@
+@import "../../docs/src/styles/app.css";
+@source "../../docs/registry/cardstock";
+@source "../../docs/src/components/demos";
+@source "./";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+body {
+  background: var(--color-fd-background);
+  color: var(--color-fd-foreground);
+  font-family: var(--font-sans);
+  cursor: none;
+}
+* {
+  cursor: none !important;
+}
+/* No blinking caret in the limit field after a click on its buttons. */
+input {
+  caret-color: transparent;
+}

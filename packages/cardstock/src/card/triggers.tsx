@@ -3,6 +3,7 @@ import type * as React from "react";
 
 import { type PartProps, usePart } from "../utils/part";
 import { useCard, useRevealScope } from "./context";
+import { flipOriginAt } from "./flip";
 
 export interface CardTriggerState extends Record<string, unknown> {
   pressed: boolean;
@@ -32,10 +33,19 @@ function useToggle(
   });
 }
 
-/** Turns the card over. Renders a `<button>` with `aria-pressed`. */
+/** Turns the card over. A press also tells the `toward` flip style where it came from, so the
+ * pressed edge rises toward you. Renders a `<button>` with `aria-pressed`. */
 export function CardFlipTrigger(props: CardTriggerProps): React.ReactElement {
-  const { flipped, setFlipped } = useCard();
-  return useToggle("card-flip-trigger", flipped, setFlipped, props);
+  const { flipped, setFlipped, flipOrigin } = useCard();
+  return useToggle("card-flip-trigger", flipped, setFlipped, props, false, {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      // Only a turn from the front picks its way; turning back retraces it.
+      if (flipped) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      if (r.width && r.height)
+        flipOrigin.set(flipOriginAt((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height));
+    },
+  });
 }
 
 /** Shows or hides the details, or one `Card.RevealGroup` of them. Disabled while the card is

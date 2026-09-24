@@ -1,12 +1,14 @@
 ---
 title: Animation
-description: CSS, Motion, or nothing. The library doesn't choose.
+description: Built-in motion where it earns its keep; CSS, Motion, or nothing for the rest.
 ---
 
-cardstock animates two things itself, because they can't be done in CSS:
+cardstock animates a few things itself, each one you can turn off and do your own way:
 
-- the **number scramble**, which changes text;
-- the **carousel's settling spring**, which carries the speed of your finger.
+- the **flip**, with a sheen (and optionally a lift, or a turn toward the press): `Card.Body effect`;
+- the **tilt**: `Card.TiltSurface`;
+- the **carousel**: its settling spring, which carries the speed of your finger, and its coverflow;
+- the **number scramble**, which changes text.
 
 Everything else is state, and moving it is up to you.
 
@@ -14,7 +16,7 @@ Everything else is state, and moving it is up to you.
 
 Most cards need nothing else. Transition the variables and attributes:
 
-- the flip on `--card-flipped`;
+- the flip on `--card-flipped` (with `effect="none"` on the body), or on the per-frame `--card-flip-*`;
 - the tilt on `--card-tilt-*`;
 - the frozen overlay on `data-starting-style` / `data-ending-style`;
 - the meter on `--card-spending-ratio`.
@@ -30,6 +32,7 @@ function Body({ children }) {
   const { flipped } = useCard();
   return (
     <Card.Body
+      effect="none"
       render={<motion.div animate={{ rotateY: flipped ? 180 : 0 }} transition={{ type: "spring" }} />}
     >
       {children}
@@ -38,15 +41,20 @@ function Body({ children }) {
 }
 ```
 
-For per-frame values, subscribe instead of re-rendering. `useCard().reveal` and `useCard().freeze` are progress objects with `get()` and `subscribe(fn)`, and `useCardCarousel().position` works the same way.
+For per-frame values, subscribe instead of re-rendering. `useCard().reveal`, `useCard().freeze` and `useCard().flip` are progress objects with `get()` and `subscribe(fn)`, and `useCarouselPosition()` works the same way.
+
+## Performance
+
+What moves every frame is a CSS variable the library writes without re-rendering: the carousel's position, a slide's offset, the tilt, the flip. The carousel's are registered as non-inheriting numbers, so a swipe restyles only the slides, not every card on the track (see [reading them deeper down](/docs/carousel#reading-them-deeper-down)). If you animate something of your own on a variable, set it on the element that moves, not on a wrapper around many.
 
 ## Reduced motion
 
 The parts respect `prefers-reduced-motion`:
 
 - tilt switches off;
+- the flip cross-fades the faces instead of turning;
 - the number reveals without a scramble;
-- the carousel settles with a 200ms ease instead of a spring.
+- the carousel settles with a 200ms ease instead of a spring, and its neighbours stop turning and receding (they still fade).
 
 In your CSS, swap movement for a short fade rather than removing everything. For example, cross-fade the faces instead of turning the card:
 

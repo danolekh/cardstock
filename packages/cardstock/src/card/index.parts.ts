@@ -1,5 +1,5 @@
 export { CardRoot as Root } from "./root";
-export { CardTilt as Tilt } from "./tilt";
+export { CardTilt as Tilt, CardTiltSurface as TiltSurface } from "./tilt";
 export { CardBody as Body, CardFront as Front, CardBack as Back } from "./faces";
 export {
   CardFlipTrigger as FlipTrigger,

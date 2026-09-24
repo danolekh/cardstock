@@ -6,7 +6,7 @@
  * noise. A shader can't read the DOM, so the face is first redrawn into a 2D canvas from an
  * untransformed clone, and that becomes the texture. The snapshot draws background colours (with
  * the top-left radius), `url()` background images (size, position and repeat), <img>s (object-fit
- * and object-position), inline SVGs, and text. Gradients in CSS aren't drawn (the card's `background`,
+ * and object-position), inline SVGs, canvases (a <Shader />'s current frame), and text. Gradients in CSS aren't drawn (the card's `background`,
  * face's own), nor are borders, shadows, filters, transforms or pseudo-elements. A cross-origin
  * image is fetched with CORS; one its server doesn't allow is left out, not the whole snapshot.
  *
@@ -18,6 +18,7 @@
  * bare. Anything marked `data-frost-skip` is left out of the snapshot. */
 
 import type { FrostBase } from "../background/background";
+import { grabLiveCanvas } from "../utils/live-canvas";
 import { farthestCorner, fitSize, imageUrl, linearEnds, place, type Rect, splitLayers, tiles } from "./fit";
 
 const VERT = `#version 300 es
@@ -101,6 +102,7 @@ const INHERITED = [
 ];
 
 type Op =
+  | { kind: "bitmap"; box: Rect; r: number; frame: HTMLCanvasElement }
   | { kind: "box"; x: number; y: number; w: number; h: number; r: number; color: string }
   | { kind: "svg"; x: number; y: number; w: number; h: number; img: HTMLImageElement }
   | {
@@ -145,6 +147,13 @@ export async function snapshotFace(
     if (name.startsWith("--")) host.style.setProperty(name, context.getPropertyValue(name));
   }
   const clone = face.cloneNode(true) as HTMLElement;
+  // A cloned canvas is blank: pair each with its original, to copy the frame it shows.
+  const originals = new Map<Element, HTMLCanvasElement>();
+  const sources = face.querySelectorAll("canvas");
+  clone.querySelectorAll("canvas").forEach((c, i) => {
+    const original = sources[i];
+    if (original) originals.set(c, original);
+  });
   clone.style.transform = "none";
   clone.style.opacity = "1"; // a face faded out (the reduced-motion flip) still has its content
   clone.querySelectorAll("[data-frost-skip]").forEach((n) => n.remove());
@@ -213,6 +222,13 @@ export async function snapshotFace(
               );
           }
         }
+        if (node instanceof HTMLCanvasElement) {
+          const original = originals.get(node);
+          // Copied now: a live canvas (a <Shader />) moves on while images load.
+          const frame = original && copyFrame(original);
+          if (frame) ops.push({ kind: "bitmap", box, r: radius, frame });
+          return;
+        }
         if (node instanceof HTMLImageElement) {
           const src = node.currentSrc || node.src;
           if (src) image(src, box, radius, cs.objectFit, cs.objectPosition, "no-repeat");
@@ -256,6 +272,24 @@ export async function snapshotFace(
     return drawn;
   } catch {
     return paint(face, w, h, dpr, base, ops, new Map());
+  }
+}
+
+/** The frame a canvas shows, copied into a canvas of its own; null if it can't be read. */
+function copyFrame(canvas: HTMLCanvasElement): HTMLCanvasElement | null {
+  const source = grabLiveCanvas(canvas);
+  if (!source) return null;
+  const w = "width" in source ? Number(source.width) : 0;
+  const h = "height" in source ? Number(source.height) : 0;
+  if (!w || !h) return null;
+  const copy = document.createElement("canvas");
+  copy.width = w;
+  copy.height = h;
+  try {
+    copy.getContext("2d")!.drawImage(source, 0, 0);
+    return copy;
+  } catch {
+    return null;
   }
 }
 
@@ -303,7 +337,14 @@ function paint(
 
   ctx.textBaseline = "middle";
   for (const op of ops) {
-    if (op.kind === "box") {
+    if (op.kind === "bitmap") {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(op.box.x, op.box.y, op.box.w, op.box.h, op.r);
+      ctx.clip();
+      ctx.drawImage(op.frame, op.box.x, op.box.y, op.box.w, op.box.h);
+      ctx.restore();
+    } else if (op.kind === "box") {
       ctx.fillStyle = op.color;
       ctx.beginPath();
       ctx.roundRect(op.x, op.y, op.w, op.h, op.r);

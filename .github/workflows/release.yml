@@ -1,8 +1,9 @@
 name: Release
 
-# After CI passes on main: publish the package if its version isn't on npm yet, then deploy the
-# docs. A routine push only redeploys the docs; bumping the version in
-# packages/cardstock/package.json is what makes a release.
+# After CI passes on main: publish each package whose version isn't on npm yet, then deploy the
+# docs. A routine push only redeploys the docs; bumping the version in a package's package.json
+# is what makes a release of it (@danolekh/cardstock tags `v…`, the backgrounds CLI
+# `backgrounds-v…`).
 #
 # Publishing uses npm trusted publishing (OIDC), so there's no npm token: the package's settings
 # on npmjs.com name this repo and this file as its trusted publisher. The docs deploy needs the
@@ -23,6 +24,17 @@ jobs:
   publish:
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
+    strategy:
+      # One package failing to publish shouldn't stop the other.
+      fail-fast: false
+      matrix:
+        include:
+          - dir: cardstock
+            name: "@danolekh/cardstock"
+            tag: v
+          - dir: backgrounds
+            name: "@danolekh/cardstock-backgrounds"
+            tag: backgrounds-v
     permissions:
       contents: write # the version tag
       id-token: write # trusted publishing and provenance
@@ -41,10 +53,10 @@ jobs:
       - name: Is this version new?
         id: version
         run: |
-          VERSION=$(node -p "require('./packages/cardstock/package.json').version")
+          VERSION=$(node -p "require('./packages/${{ matrix.dir }}/package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if npm view "@danolekh/cardstock@$VERSION" version > /dev/null 2>&1; then
-            echo "@danolekh/cardstock@$VERSION is already on npm; nothing to publish."
+          if npm view "${{ matrix.name }}@$VERSION" version > /dev/null 2>&1; then
+            echo "${{ matrix.name }}@$VERSION is already on npm; nothing to publish."
             echo "new=false" >> "$GITHUB_OUTPUT"
           else
             echo "new=true" >> "$GITHUB_OUTPUT"
@@ -53,19 +65,19 @@ jobs:
       - if: steps.version.outputs.new == 'true'
         run: pnpm install --frozen-lockfile
       - if: steps.version.outputs.new == 'true'
-        run: pnpm --filter @danolekh/cardstock build
+        run: pnpm --filter "${{ matrix.name }}..." build
       # Trusted publishing needs npm 11.5.1 or later.
       - if: steps.version.outputs.new == 'true'
         run: npm install --global npm@latest
       - if: steps.version.outputs.new == 'true'
         name: Publish
-        working-directory: packages/cardstock
+        working-directory: packages/${{ matrix.dir }}
         run: npm publish --access public
       - if: steps.version.outputs.new == 'true'
         name: Tag
         run: |
-          git tag "v${{ steps.version.outputs.version }}"
-          git push origin "v${{ steps.version.outputs.version }}"
+          git tag "${{ matrix.tag }}${{ steps.version.outputs.version }}"
+          git push origin "${{ matrix.tag }}${{ steps.version.outputs.version }}"
 
   docs:
     # After the publish (or its skip), so the site never documents a version that isn't out.

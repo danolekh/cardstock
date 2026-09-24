@@ -1,0 +1,56 @@
+{
+  "name": "@danolekh/cardstock-backgrounds",
+  "version": "0.2.0",
+  "description": "Card backgrounds for @danolekh/cardstock on demand: download the house artwork into your app, or prerender your own images at the card's size with their colour, tone and ink worked out.",
+  "keywords": [
+    "card",
+    "cardstock",
+    "cli",
+    "credit-card",
+    "images",
+    "sharp",
+    "webp"
+  ],
+  "homepage": "https://cardstock.danolekh.com",
+  "license": "MIT",
+  "author": "Dan Olekh <danyaolekhq@gmail.com> (https://danolekh.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danolekh/cardstock.git",
+    "directory": "packages/backgrounds"
+  },
+  "bin": {
+    "cardstock-backgrounds": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "manifest.schema.json",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./manifest.schema.json": "./manifest.schema.json",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "sharp": "^0.35.4"
+  },
+  "devDependencies": {
+    "@danolekh/cardstock": "workspace:*",
+    "@types/node": "^26.6.1",
+    "tsdown": "0.23.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
