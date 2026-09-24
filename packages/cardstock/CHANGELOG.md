@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.4.0
+
+### Shader backgrounds
+
+A fifth background type, `shader`: live GLSL behind the card, stored as data like the others.
+
+**Added**
+
+- `{ type: "shader", shader, params, speed, color, poster, posterSrcSet }` in `CardBackground`, checked by `parseCardBackground`. Only a shader's id and parameters are stored in the data, never its GLSL.
+- `shaderBackground(id, init)`, with each built-in shader's parameters type-checked, plus `BUILT_IN_SHADERS` and `ShaderParamsById`.
+- `@danolekh/cardstock/shader`, a new entry:
+  - `<Shader />` draws the background live inside `Card.Background`, over its poster.
+  - `defineShader()` and `<ShaderLibrary>` for your own shaders, written as GLSL or pasted from Shadertoy or twigl.
+  - `SHADER_PRESETS` and `loadShaderPreset()`.
+- Eight built-in shaders, each loaded on first use:
+  - `singularity`: Xor's "Singularity", MIT.
+  - `silk`
+  - `mesh`: ported from Paper Shaders, Apache-2.0; see `NOTICE`.
+  - `grain`
+  - `liquid-metal`
+  - `holo-foil`
+  - `flow-dots`: after antfu.me's ArtDots.
+  - `guilloche`
+- Every `<Shader />` on the page shares one WebGL2 context and one animation frame, so a carousel full of them doesn't run into the browser's limit on live contexts.
+- A shader draws only when what it shows has changed. With `play="auto"` it pauses when it's off-screen, the tab is hidden, its slide isn't current, or its face is turned away.
+  - Under reduced motion it shows its still frame.
+  - On a slow GPU it draws fewer pixels.
+  - Time eases to a stop as the card freezes.
+- `Card.Background` shows a shader's poster, as it does an image, and gives the layers inside it the resolved background, so a back face with its own `value` gets its own shader.
+- `<Frost />` now draws canvases in its snapshot: a shader's current frame. It retakes the snapshot as a freeze starts and again once the shader has stopped.
+
 ## 0.3.0
 
 ### Carousel, rewritten

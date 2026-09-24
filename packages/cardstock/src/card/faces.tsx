@@ -1,6 +1,6 @@
 "use client";
 import type * as React from "react";
-import { createContext, useContext, useRef, useState } from "react";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 
 import { type PartProps, usePart } from "../utils/part";
 import { useIsoLayoutEffect } from "../utils/use-iso-layout-effect";
@@ -153,11 +153,16 @@ function Sheen() {
   );
 }
 
+/** The face a part is rendered on, and whether it faces the viewer; null outside the faces. */
+const FaceContext = createContext<{ side: "front" | "back"; visible: boolean } | null>(null);
+export const useFaceSide = (): { side: "front" | "back"; visible: boolean } | null => useContext(FaceContext);
+
 function useFace(side: "front" | "back", props: CardFaceProps) {
   const { flipped, reducedMotion } = useCard();
   const { styles, turning } = useContext(BodyContext);
   const { children, ...rest } = props;
   const visible = side === "back" ? flipped : !flipped;
+  const face = useMemo(() => ({ side, visible }), [side, visible]);
   const own: React.CSSProperties = turning
     ? {
         backfaceVisibility: "hidden",
@@ -178,10 +183,10 @@ function useFace(side: "front" | "back", props: CardFaceProps) {
     inert: !visible,
     style: own,
     children: (
-      <>
+      <FaceContext.Provider value={face}>
         {children}
         {turning && styles.includes("sheen") ? <Sheen /> : null}
-      </>
+      </FaceContext.Provider>
     ),
   });
 }

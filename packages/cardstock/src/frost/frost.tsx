@@ -139,6 +139,19 @@ export function Frost(props: FrostProps): React.ReactElement {
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [version, baseKey, useShader, session]);
 
+  // A live shader behind the face keeps moving after the snapshot, so retake it as the freeze
+  // starts, and again once it's done: the shader's time has eased to a stop by then, so that frame
+  // is the one it holds.
+  useEffect(() => {
+    let previous = freeze.get();
+    return freeze.subscribe((p) => {
+      const edge = (previous === 0 && p > 0) || (previous < 1 && p === 1);
+      previous = p;
+      if (edge && hostRef.current?.parentElement?.querySelector('[data-slot="card-shader"]'))
+        resnap.current();
+    });
+  }, [freeze]);
+
   // The veil follows the freeze directly, and fades out once the shader has taken over.
   const showVeil = !useShader || !ready;
   const veilRef = useFreezeOpacity(showVeil);

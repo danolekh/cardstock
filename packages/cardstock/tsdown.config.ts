@@ -7,6 +7,7 @@ export default defineConfig({
     "src/carousel/index.ts",
     "src/frost/index.ts",
     "src/limit/index.ts",
+    "src/shader/index.ts",
   ],
   format: "esm",
   platform: "browser",

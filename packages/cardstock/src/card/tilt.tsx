@@ -23,6 +23,35 @@ export interface CardTiltSurfaceProps extends PartProps<"div", CardTiltState> {
 }
 
 const TiltContext = createContext<CardTiltState>({ hovering: false, disabled: true });
+
+/** The pointer over the tilt's hit area, 0..1 across it, for layers that follow it every frame
+ * without reading computed style (<Shader />). */
+export interface TiltPointer {
+  readonly x: number;
+  readonly y: number;
+  subscribe: (listener: () => void) => () => void;
+}
+const PointerContext = createContext<TiltPointer | null>(null);
+/** The pointer of the `Card.Tilt` around this; null outside one. */
+export const useTiltPointer = (): TiltPointer | null => useContext(PointerContext);
+
+function createPointer() {
+  const listeners = new Set<() => void>();
+  const pointer = {
+    x: 0.5,
+    y: 0.5,
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+    set(x: number, y: number) {
+      pointer.x = x;
+      pointer.y = y;
+      listeners.forEach((l) => l());
+    },
+  };
+  return pointer;
+}
 const SurfaceContext = createContext(false);
 
 /** Rendered inside `Card.TiltSurface`, which gives the card its perspective. */
@@ -54,12 +83,14 @@ export function CardTilt(props: CardTiltProps): React.ReactElement {
   const [hovering, setHovering] = useState(false);
   const ref = useRef<HTMLElement>(null);
   const frame = useRef(0);
+  const [pointer] = useState(createPointer);
   const state: CardTiltState = { hovering, disabled };
 
   const write = (x: number, y: number) => {
     cancelAnimationFrame(frame.current);
     frame.current = requestAnimationFrame(() => {
       for (const [k, v] of Object.entries(VARS(x, y))) ref.current?.style.setProperty(k, String(v));
+      pointer.set(x, y);
     });
   };
 
@@ -70,7 +101,11 @@ export function CardTilt(props: CardTiltProps): React.ReactElement {
     rest,
     {
       style: VARS(0.5, 0.5) as React.CSSProperties,
-      children: <TiltContext.Provider value={state}>{children}</TiltContext.Provider>,
+      children: (
+        <TiltContext.Provider value={state}>
+          <PointerContext.Provider value={pointer}>{children}</PointerContext.Provider>
+        </TiltContext.Provider>
+      ),
       onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
         if (disabled) return;
         setHovering(true);

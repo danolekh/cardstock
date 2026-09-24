@@ -1,6 +1,6 @@
 # @danolekh/cardstock
 
-Headless, composable bank-card primitives for React: a card that flips and tilts, painted with backgrounds you store as data, a number that stays masked and decodes when revealed (per field, with an optional timeout and a copy action), a frozen state with a WebGL frost, card statuses, a spending meter and limit field, and a carousel you swipe between cards with.
+Headless, composable bank-card primitives for React: a card that flips and tilts, painted with backgrounds you store as data (colours, gradients, artwork or live shaders), a number that stays masked and decodes when revealed (per field, with an optional timeout and a copy action), a frozen state with a WebGL frost, card statuses, a spending meter and limit field, and a carousel you swipe between cards with.
 
 **[Docs and live demos → cardstock.danolekh.com](https://cardstock.danolekh.com)**
 
