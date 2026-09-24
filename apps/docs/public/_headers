@@ -1,0 +1,5 @@
+# Card backgrounds are meant to be used from other sites: CORS lets <Frost /> read them into its
+# snapshot, and the files never change in place (a new look gets a new name).
+/backgrounds/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=31536000, immutable
