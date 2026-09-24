@@ -2,6 +2,10 @@
 
 Headless, composable bank-card primitives for React: a card that flips and tilts, painted with backgrounds you store as data, a number that stays masked and decodes when revealed (per field, with an optional timeout and a copy action), a frozen state with a WebGL frost, card statuses, a spending meter and limit field, and a carousel you swipe between cards with.
 
+**[Docs and live demos → cardstock.danolekh.com](https://cardstock.danolekh.com)**
+
+[![cardstock: watch the 20-second tour](https://cardstock.danolekh.com/cardstock-poster.jpg)](https://cardstock.danolekh.com/cardstock.mp4)
+
 The parts render plain elements and report their state as `data-*` attributes and CSS variables. You choose the styling (Tailwind, CSS, anything) and the animation (CSS, Motion via `render`, or none). The design follows Base UI.
 
 ```bash

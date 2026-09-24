@@ -1,6 +1,10 @@
 # cardstock
 
-Headless, composable bank-card primitives for React, with docs at [cardstock.danolekh.com](https://cardstock.danolekh.com).
+Headless, composable bank-card primitives for React: flip, tilt, a masked number that decodes, reveal groups with timeouts, copy, freeze with WebGL frost, statuses, storable backgrounds, a spending meter and limit field, and a swipeable carousel.
+
+**[Docs and live demos → cardstock.danolekh.com](https://cardstock.danolekh.com)** · [npm](https://www.npmjs.com/package/@danolekh/cardstock)
+
+[![cardstock: watch the 20-second tour](https://cardstock.danolekh.com/cardstock-poster.jpg)](https://cardstock.danolekh.com/cardstock.mp4)
 
 | Path                 | What                                                                                                                                     |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -15,5 +19,4 @@ pnpm verify       # lint, format, types, tests and builds, through turbo
 
 The tooling is Turborepo, pnpm, oxlint, oxfmt, tsdown (Rolldown + oxc), Vitest and TypeScript 7.
 
-Release: `pnpm --filter @danolekh/cardstock publish --access public`.
-Deploy the docs: `pnpm --filter docs build && pnpm --filter docs exec wrangler deploy`.
+Releases are automatic (`.github/workflows/release.yml`). After CI passes on `main`, the version in `packages/cardstock/package.json` is published to npm if it isn't there yet, then tagged, and the docs are deployed to Cloudflare. To release, bump the version.
