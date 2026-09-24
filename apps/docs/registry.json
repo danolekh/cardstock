@@ -23,8 +23,8 @@
       "name": "limit-field",
       "type": "registry:component",
       "title": "Limit field",
-      "description": "A currency limit you change by dragging across its label, on Base UI's NumberField scrub area.",
-      "dependencies": ["@base-ui/react"],
+      "description": "A currency limit you change by dragging across its label, on cardstock's LimitField (Base UI's NumberField).",
+      "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
       "files": [{ "path": "registry/cardstock/limit-field.tsx", "type": "registry:component" }]
     },
     {

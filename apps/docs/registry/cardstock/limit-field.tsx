@@ -1,10 +1,10 @@
 "use client";
-import { NumberField } from "@base-ui/react/number-field";
+import { LimitField as Limit } from "@danolekh/cardstock/limit";
 import type * as React from "react";
 
-/* A limit you change by dragging across the number, built on Base UI's NumberField: its
- * ScrubArea turns horizontal drags into steps (and hides the cursor while you scrub), and the
- * input stays typeable and keyboard-accessible. */
+/* A limit you change by dragging across the number, styled over cardstock's LimitField (Base UI's
+ * NumberField with money defaults): the scrub area turns horizontal drags into steps (and hides
+ * the cursor while you scrub), and the input stays typeable and keyboard-accessible. */
 
 export interface LimitFieldProps {
   value: number;
@@ -31,41 +31,40 @@ export function LimitField({
   id = "limit",
 }: LimitFieldProps): React.ReactElement {
   return (
-    <NumberField.Root
+    <Limit.Root
       value={value}
-      onValueChange={(v) => v !== null && onValueChange(v)}
+      onValueChange={onValueChange}
       min={min}
       max={max}
       step={step}
-      largeStep={step * 5}
       locale={locale}
-      format={{ style: "currency", currency, maximumFractionDigits: 0 }}
+      currency={currency}
       // The id goes to the input; Base UI points its buttons' aria-controls at it.
       id={id}
       className="flex items-center justify-between gap-3"
     >
-      <NumberField.ScrubArea
+      <Limit.ScrubArea
         pixelSensitivity={3}
         className="text-fd-muted-foreground cursor-ew-resize text-sm select-none"
         title="Drag sideways to change"
       >
-        <label htmlFor={id} className="cursor-ew-resize">
+        <Limit.Label className="cursor-ew-resize">
           {label} <span className="text-xs">· drag</span>
-        </label>
-        <NumberField.ScrubAreaCursor className="drop-shadow-[0_1px_1px_rgb(0_0_0/0.4)]">
+        </Limit.Label>
+        <Limit.ScrubAreaCursor className="drop-shadow-[0_1px_1px_rgb(0_0_0/0.4)]">
           <ScrubIcon />
-        </NumberField.ScrubAreaCursor>
-      </NumberField.ScrubArea>
-      <NumberField.Group className="border-fd-border flex items-center rounded-lg border">
-        <NumberField.Decrement className="text-fd-muted-foreground hover:text-fd-foreground px-2.5 py-1">
+        </Limit.ScrubAreaCursor>
+      </Limit.ScrubArea>
+      <Limit.Group className="border-fd-border flex items-center rounded-lg border">
+        <Limit.Decrement className="text-fd-muted-foreground hover:text-fd-foreground px-2.5 py-1">
           −
-        </NumberField.Decrement>
-        <NumberField.Input className="border-fd-border focus:bg-fd-accent/40 w-24 border-x bg-transparent py-1 text-center text-sm tabular-nums outline-none" />
-        <NumberField.Increment className="text-fd-muted-foreground hover:text-fd-foreground px-2.5 py-1">
+        </Limit.Decrement>
+        <Limit.Input className="border-fd-border focus:bg-fd-accent/40 w-24 border-x bg-transparent py-1 text-center text-sm tabular-nums outline-none" />
+        <Limit.Increment className="text-fd-muted-foreground hover:text-fd-foreground px-2.5 py-1">
           +
-        </NumberField.Increment>
-      </NumberField.Group>
-    </NumberField.Root>
+        </Limit.Increment>
+      </Limit.Group>
+    </Limit.Root>
   );
 }
 

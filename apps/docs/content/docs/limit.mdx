@@ -1,0 +1,48 @@
+---
+title: Limit field
+description: An editable spending limit you can type, step or scrub.
+---
+
+`LimitField` edits a limit. It's Base UI's [`NumberField`](https://base-ui.com/react/components/number-field) with money defaults, so NumberField provides typing, clamping to `min`/`max`, arrow-key steps and the scrub area. It imports from its own entry point:
+
+```tsx
+import { LimitField } from "@danolekh/cardstock/limit";
+
+<LimitField.Root
+  value={limit}
+  onValueChange={setLimit}
+  min={500}
+  max={5000}
+  step={50}
+  currency="EUR"
+  locale="de-AT"
+>
+  <LimitField.ScrubArea>
+    <LimitField.Label>Monthly limit</LimitField.Label>
+    <LimitField.ScrubAreaCursor>⇔</LimitField.ScrubAreaCursor>
+  </LimitField.ScrubArea>
+  <LimitField.Group>
+    <LimitField.Decrement>−</LimitField.Decrement>
+    <LimitField.Input />
+    <LimitField.Increment>+</LimitField.Increment>
+  </LimitField.Group>
+</LimitField.Root>;
+```
+
+What it adds to NumberField:
+
+- `currency` formats the value as whole units of that currency. Pass `format` to use your own `Intl.NumberFormatOptions` instead.
+- `largeStep` (Shift+arrow) defaults to five `step`s.
+- `onValueChange` only receives numbers. An emptied input doesn't report, and the last limit stays.
+- `LimitField.Label` is a `<label>` wired to the input.
+- Every part carries a `data-slot` (`limit-field`, `limit-field-input`, …) like the card's parts do.
+
+Every other NumberField prop and state attribute passes through, such as `data-scrubbing`, `disabled`, `readOnly` and `onValueCommitted`.
+
+Keyboard: ↑/↓ change the limit by `step`, Shift+↑/↓ by `largeStep`, and Home/End jump to `min`/`max`. Drag sideways across the scrub area to scrub.
+
+A styled copy is in the registry:
+
+```bash
+pnpm dlx shadcn@latest add https://cardstock.danolekh.com/r/limit-field.json
+```
