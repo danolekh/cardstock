@@ -7,7 +7,7 @@
       "name": "payment-card",
       "type": "registry:component",
       "title": "Payment card",
-      "description": "A styled card on the cardstock primitives: any background (four gradients built in), tilt with glare, flip, a decoding number, spending bar and frost.",
+      "description": "A styled card on the cardstock primitives: any background (four gradients built in, artwork or a live shader), tilt with glare, flip, a decoding number, spending bar and frost.",
       "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
       "files": [
         {

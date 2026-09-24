@@ -5,7 +5,7 @@ description: A card's look as data you store, paint, and frost.
 
 <ComponentPreview name="backgrounds" />
 
-A card's background is data. `CardBackground` is a small JSON object describing a colour, a gradient or an image. Store it with the card, pass it to `Card.Root`, and the whole card follows it: `Card.Background` paints it, `data-tone` tells your text which way to go, and `<Frost />` draws it under the frost.
+A card's background is data. `CardBackground` is a small JSON object describing a colour, a gradient, an image or a live [shader](/docs/shaders). Store it with the card, pass it to `Card.Root`, and the whole card follows it: `Card.Background` paints it, `data-tone` tells your text which way to go, and `<Frost />` draws it under the frost.
 
 ```tsx
 import { backgroundInk, Card, type CardBackground } from "@danolekh/cardstock";
@@ -34,12 +34,13 @@ const background: CardBackground = {
 
 ## The format
 
-| `type`   | Fields                                                     | Paints                                            |
-| -------- | ---------------------------------------------------------- | ------------------------------------------------- |
-| `solid`  | `color`                                                    | A flat colour                                     |
-| `linear` | `stops: [color, 0..1][]`, `angle` (degrees, default 135)   | `linear-gradient()`                               |
-| `radial` | `stops`, `at: [x, y]` (fractions, default the middle)      | `radial-gradient(circle farthest-corner at …)`    |
-| `image`  | `src`, `srcSet`, `position` (object-position), **`color`** | An `<img>` with `object-fit: cover`, over `color` |
+| `type`   | Fields                                                     | Paints                                                               |
+| -------- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
+| `solid`  | `color`                                                    | A flat colour                                                        |
+| `linear` | `stops: [color, 0..1][]`, `angle` (degrees, default 135)   | `linear-gradient()`                                                  |
+| `radial` | `stops`, `at: [x, y]` (fractions, default the middle)      | `radial-gradient(circle farthest-corner at …)`                       |
+| `image`  | `src`, `srcSet`, `position` (object-position), **`color`** | An `<img>` with `object-fit: cover`, over `color`                    |
+| `shader` | `shader`, `params`, `speed`, `poster`, **`color`**         | Its poster over `color`; [`<Shader />`](/docs/shaders) draws it live |
 
 Every type also takes the following, all optional:
 

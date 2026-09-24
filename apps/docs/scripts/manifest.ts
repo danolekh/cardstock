@@ -56,12 +56,24 @@ const TAGS: Record<string, string[]> = {
   linen: ["paper", "texture"],
   tide: ["pattern", "waves"],
   noir: ["pattern", "grid"],
+  singularity: ["space", "glow"],
+  silk: ["fabric", "gradient"],
+  mesh: ["mesh", "gradient"],
+  grain: ["gradient", "texture"],
+  "liquid-metal": ["metal", "chrome"],
+  "holo-foil": ["foil", "iridescent"],
+  "flow-dots": ["pattern", "dots"],
+  "guilloche-live": ["pattern", "engraved"],
 };
 
-/** The files an image preset names, from its srcSet (or its src alone), as bare file names. */
+/** The files a preset names, from its srcSet (or its src alone), or a shader's poster, as bare
+ * file names. */
 function filesOf(bg: Record<string, unknown>): string[] {
-  const set = typeof bg.srcSet === "string" ? bg.srcSet.split(",").map((c) => c.trim().split(/\s+/)[0]!) : [];
-  return [...new Set([String(bg.src), ...set].map((url) => basename(new URL(url, BASE).pathname)))];
+  const src = bg.type === "shader" ? bg.poster : bg.src;
+  const srcSet = bg.type === "shader" ? bg.posterSrcSet : bg.srcSet;
+  if (typeof src !== "string") return [];
+  const set = typeof srcSet === "string" ? srcSet.split(",").map((c) => c.trim().split(/\s+/)[0]!) : [];
+  return [...new Set([src, ...set].map((url) => basename(new URL(url, BASE).pathname)))];
 }
 
 const manifest = {
@@ -70,10 +82,17 @@ const manifest = {
   license: "MIT",
   presets: Object.fromEntries(
     Object.entries(presets).map(([name, bg]) => {
-      const { label, src: _src, srcSet: _srcSet, ...background } = bg;
+      const {
+        label,
+        src: _src,
+        srcSet: _srcSet,
+        poster: _poster,
+        posterSrcSet: _posterSrcSet,
+        ...background
+      } = bg;
       const tone = backgroundTone(bg as never);
       const files =
-        bg.type === "image"
+        bg.type === "image" || bg.type === "shader"
           ? filesOf(bg)
               .map((file) => {
                 const bytes = readFileSync(new URL(file, OUT));
@@ -83,7 +102,8 @@ const manifest = {
               })
               .sort((a, b) => b.width - a.width)
           : [];
-      const tags = [...(TAGS[name] ?? []), ...(bg.type === "image" ? [] : ["gradient"]), tone];
+      const kind = bg.type === "image" ? [] : bg.type === "shader" ? ["animated"] : ["gradient"];
+      const tags = [...(TAGS[name] ?? []), ...kind, tone];
       return [name, { label, tags: [...new Set(tags)], background, files }];
     }),
   ),

@@ -320,6 +320,222 @@
           "sha256": "eecd3b64df0baa0c796d72a9d611263f402500d28f25b0d9210a36e735e1ba5d"
         }
       ]
+    },
+    "singularity": {
+      "label": "Singularity",
+      "tags": ["space", "glow", "animated", "dark"],
+      "background": {
+        "type": "shader",
+        "shader": "singularity",
+        "color": "#27242e",
+        "tone": "dark",
+        "ink": "#f5f5f5"
+      },
+      "files": [
+        {
+          "file": "singularity-still.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 28620,
+          "sha256": "229e87948c28579c00be47d02955d8c5db726d26253573202dc5af82eeb516a3"
+        },
+        {
+          "file": "singularity-still-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 11276,
+          "sha256": "78c33bdadc2f9923cc4866357d4f0698e612be46fd97bf2139270040eeed9fa4"
+        }
+      ]
+    },
+    "silk": {
+      "label": "Silk",
+      "tags": ["fabric", "gradient", "animated", "dark"],
+      "background": {
+        "type": "shader",
+        "shader": "silk",
+        "color": "#532d90",
+        "tone": "dark",
+        "ink": "#f5f3ff"
+      },
+      "files": [
+        {
+          "file": "silk-still.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 21260,
+          "sha256": "3a165db4db56b9a35604234165ce8ab3f4ccef2cfa423bada2132cd5a2242231"
+        },
+        {
+          "file": "silk-still-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 9286,
+          "sha256": "397d771020cf20a92f204921a7890464cb8891c21e16fd7402db09e45484a97c"
+        }
+      ]
+    },
+    "mesh": {
+      "label": "Mesh",
+      "tags": ["mesh", "gradient", "animated", "light"],
+      "background": {
+        "type": "shader",
+        "shader": "mesh",
+        "color": "#af8dce",
+        "tone": "light",
+        "ink": "#140f19"
+      },
+      "files": [
+        {
+          "file": "mesh-still.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 116198,
+          "sha256": "52f5ad2a8adf09160371323e51fb778cde58b6b2bcd6662ffc872de6087e31fd"
+        },
+        {
+          "file": "mesh-still-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 6542,
+          "sha256": "537fede35d52438d91326b2a52989d2be658f49d2a612cf124e51bfd63eebf57"
+        }
+      ]
+    },
+    "grain": {
+      "label": "Grain",
+      "tags": ["gradient", "texture", "animated", "light"],
+      "background": {
+        "type": "shader",
+        "shader": "grain",
+        "color": "#e2814c",
+        "tone": "light",
+        "ink": "#190f0b"
+      },
+      "files": [
+        {
+          "file": "grain-still.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 481574,
+          "sha256": "8beef712e4a4c1d5589c555a0a9c24b1b10101104f2e64d39b37f6b25b3d3187"
+        },
+        {
+          "file": "grain-still-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 43060,
+          "sha256": "ffda68323a591fff97cc023883d0004d703be70e02379c33ceb91807f5844b3e"
+        }
+      ]
+    },
+    "liquid-metal": {
+      "label": "Liquid metal",
+      "tags": ["metal", "chrome", "animated", "light"],
+      "background": {
+        "type": "shader",
+        "shader": "liquid-metal",
+        "color": "#a7abb1",
+        "tone": "light",
+        "ink": "#121212"
+      },
+      "files": [
+        {
+          "file": "liquid-metal-still.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 46788,
+          "sha256": "21622efc9244f6badb6ba1712c985286db8d720efcfebac196b5ad89c33190e2"
+        },
+        {
+          "file": "liquid-metal-still-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 16948,
+          "sha256": "e014caed253bdef0cd9dd2495c1c305ae31f7d8901a8da1d025b6320e77fc9c9"
+        }
+      ]
+    },
+    "holo-foil": {
+      "label": "Holo foil",
+      "tags": ["foil", "iridescent", "animated", "light"],
+      "background": {
+        "type": "shader",
+        "shader": "holo-foil",
+        "color": "#dbd9e2",
+        "tone": "light",
+        "ink": "#1a0e0e"
+      },
+      "files": [
+        {
+          "file": "holo-foil-still.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 57850,
+          "sha256": "08710357323bb1246837d987ea1059e6bd5686ca62559747fda5f77db2c0acca"
+        },
+        {
+          "file": "holo-foil-still-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 23248,
+          "sha256": "681d805be0389774c75e22cdf10ec08c2fa60be787a7e601d817bc82e1f3d5ac"
+        }
+      ]
+    },
+    "flow-dots": {
+      "label": "Flow dots",
+      "tags": ["pattern", "dots", "animated", "dark"],
+      "background": {
+        "type": "shader",
+        "shader": "flow-dots",
+        "color": "#141518",
+        "tone": "dark",
+        "ink": "#f2f4ff"
+      },
+      "files": [
+        {
+          "file": "flow-dots-still.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 58728,
+          "sha256": "b841f8e5d6296b9c2e2364fe1a36049e70ddc00929b7c43c2b7f038827ab8fd7"
+        },
+        {
+          "file": "flow-dots-still-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 36972,
+          "sha256": "b1bf46e7787c9bbb93baf1e36ad3dcd8e11c300404ea62f038f173de5ad37aec"
+        }
+      ]
+    },
+    "guilloche-live": {
+      "label": "Guilloché live",
+      "tags": ["pattern", "engraved", "animated", "dark"],
+      "background": {
+        "type": "shader",
+        "shader": "guilloche",
+        "color": "#22262d",
+        "tone": "dark",
+        "ink": "#f3f4ff"
+      },
+      "files": [
+        {
+          "file": "guilloche-still.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 271872,
+          "sha256": "048965b0c688daa737b5981df1c8bc4202d4be55a62a70aa750acd0de99df3ad"
+        },
+        {
+          "file": "guilloche-still-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 97952,
+          "sha256": "d1bd819d1a875200fd396589feb79937cd9f1bc6eec46f348b7dec984b1b59e7"
+        }
+      ]
     }
   }
 }

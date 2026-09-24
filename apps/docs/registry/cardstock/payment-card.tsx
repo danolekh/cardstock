@@ -9,14 +9,16 @@ import {
   type CardRootState,
 } from "@danolekh/cardstock";
 import { Frost, FrostVeil } from "@danolekh/cardstock/frost";
+import { Shader } from "@danolekh/cardstock/shader";
 import type * as React from "react";
 
 /* A styled card built from the cardstock primitives: tilt with a glare, a flip, a number that
  * decodes in fixed cells, spending along the bottom edge and frost when frozen. Everything that
  * moves reads the primitives' data attributes and CSS variables, so restyle freely. */
 
-/** Four gradient designs to start from. For artwork, pass any `CardBackground` as `background`:
- * `npx @danolekh/cardstock-backgrounds add holo` downloads presets into your app. */
+/** Four gradient designs to start from. For artwork or a live shader, pass any `CardBackground` as
+ * `background`: `npx @danolekh/cardstock-backgrounds add holo silk` downloads presets into your
+ * app. */
 export const DESIGNS = {
   ink: {
     type: "linear",
@@ -127,8 +129,8 @@ export function PaymentCard({
     "--card-sub": d.sub,
     "--card-line": d.line,
   } as React.CSSProperties;
-  const artwork = bg.type === "image";
-  // Artwork is busier than a gradient: a soft shadow keeps the text off it.
+  const artwork = bg.type === "image" || bg.type === "shader";
+  // Artwork and shaders are busier than a gradient: a soft shadow keeps the text off them.
   const lift = artwork
     ? backgroundTone(bg) === "dark"
       ? "[text-shadow:0_1px_2px_rgb(0_0_0/0.35)]"
@@ -153,7 +155,11 @@ export function PaymentCard({
               button in 3D and take its clicks. Nothing on them is interactive. */}
             <Card.Body effect={flip} className="pointer-events-none absolute inset-0">
               <Card.Front className={`${face} ${lift}`} style={{ color: "var(--card-ink)" }}>
-                <Card.Background loading={active ? "eager" : "lazy"} className="absolute inset-0" />
+                {/* A shader background draws live over its poster; off the card in focus it holds
+                    its frame. Every card on the page shares one WebGL context. */}
+                <Card.Background loading={active ? "eager" : "lazy"} className="absolute inset-0">
+                  <Shader play={active ? "auto" : "paused"} />
+                </Card.Background>
                 {!artwork && <Pattern color={d.line} />}
                 <div className="absolute inset-x-[6.5cqw] top-[6cqw] flex items-start justify-between">
                   <span className="text-[5cqw] leading-none font-extrabold tracking-tight">{brand}</span>
@@ -201,7 +207,9 @@ export function PaymentCard({
               </Card.Front>
 
               <Card.Back className={face} style={{ color: "var(--card-ink)" }}>
-                <Card.Background loading="lazy" className="absolute inset-0" />
+                <Card.Background loading="lazy" className="absolute inset-0">
+                  <Shader play={active ? "auto" : "paused"} />
+                </Card.Background>
                 {!artwork && <Pattern color={d.line} />}
                 <div className="absolute inset-x-0 top-[11%] h-[18%] bg-[#111]" />
                 <div className="absolute inset-x-[6.5%] top-[40%] flex items-center gap-[4%]">

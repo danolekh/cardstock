@@ -8,6 +8,7 @@
     "build": "pnpm backgrounds:manifest && pnpm registry:build && vite build",
     "registry:build": "shadcn build --output public/r",
     "backgrounds": "node scripts/backgrounds.ts",
+    "shaders": "node scripts/shaders.ts",
     "backgrounds:manifest": "node scripts/manifest.ts",
     "preview": "vite preview",
     "check-types": "tsc --noEmit",

@@ -1,7 +1,15 @@
-import type { CardBackground, ImageBackground } from "@danolekh/cardstock";
+import {
+  type BuiltInShader,
+  type CardBackground,
+  type ImageBackground,
+  shaderBackground,
+  type ShaderBackground,
+} from "@danolekh/cardstock/background";
 
-/* The docs' own set of backgrounds: the four gradients and the house artwork in public/backgrounds.
- * It's the one source for the demos, the promo stage and the manifest the
+import POSTERS from "./shader-posters.json" with { type: "json" };
+
+/* The docs' own set of backgrounds: the four gradients, the house artwork in public/backgrounds and
+ * the built-in shaders. It's the one source for the demos, the promo stage and the manifest the
  * `@danolekh/cardstock-backgrounds` CLI downloads from (scripts/manifest.ts). Apps don't import
  * this: they run `npx @danolekh/cardstock-backgrounds add …` and get their own copy. */
 
@@ -15,6 +23,25 @@ const art = (name: string, rest: Omit<ImageBackground, "type" | "src" | "srcSet"
     srcSet: `${HOST}/${name}-860.webp 860w, ${HOST}/${name}.webp 1720w`,
     ...rest,
   }) as const;
+
+/** A built-in shader with its poster, colour, tone and ink as scripts/shaders.ts measured them. */
+const live = (id: BuiltInShader, label: string): ShaderBackground & { label: string } => {
+  const poster = (POSTERS as Record<string, Omit<ShaderBackground, "type" | "shader">>)[id];
+  if (!poster) throw new Error(`No poster for the "${id}" shader: run pnpm --filter docs shaders ${id}.`);
+  return { ...shaderBackground(id, { ...poster }), label };
+};
+
+/** The built-in shaders, as backgrounds. */
+export const SHADERS = {
+  singularity: live("singularity", "Singularity"),
+  silk: live("silk", "Silk"),
+  mesh: live("mesh", "Mesh"),
+  grain: live("grain", "Grain"),
+  "liquid-metal": live("liquid-metal", "Liquid metal"),
+  "holo-foil": live("holo-foil", "Holo foil"),
+  "flow-dots": live("flow-dots", "Flow dots"),
+  "guilloche-live": live("guilloche", "Guilloché live"),
+} as const satisfies Record<string, ShaderBackground & { label: string }>;
 
 export const BACKGROUNDS = {
   ink: {
@@ -74,13 +101,26 @@ export const BACKGROUNDS = {
   linen: art("linen", { label: "Linen", color: "#f1ebdf", tone: "light", ink: "#2a241a" }),
   tide: art("tide", { label: "Tide", color: "#145060", tone: "dark", ink: "#effbf8" }),
   noir: art("noir", { label: "Noir", color: "#111218", tone: "dark", ink: "#e8e9f0" }),
+  ...SHADERS,
 } as const satisfies Record<string, CardBackground & { label: string }>;
 
 export type BackgroundName = keyof typeof BACKGROUNDS;
 
 /** The playground's mix: gradients and artwork, in the order they swipe. */
 export const PLAYGROUND_BACKGROUNDS = Object.fromEntries(
-  (["ink", "holo", "guilloche", "paper", "aurora", "topo", "ember", "guilloche-sand"] as const).map(
-    (name) => [name, BACKGROUNDS[name]],
-  ),
+  (
+    [
+      "ink",
+      "singularity",
+      "holo",
+      "silk",
+      "guilloche",
+      "paper",
+      "liquid-metal",
+      "aurora",
+      "topo",
+      "ember",
+      "guilloche-sand",
+    ] as const
+  ).map((name) => [name, BACKGROUNDS[name]]),
 ) as Record<string, CardBackground & { label: string }>;

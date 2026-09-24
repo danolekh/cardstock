@@ -61,6 +61,12 @@ export const demos = {
     () => import("./backgrounds-demo.tsx?raw"),
     "backgrounds-demo.tsx",
   ),
+  shaders: demo(
+    () => import("./shaders-demo"),
+    (m) => m.ShadersDemo,
+    () => import("./shaders-demo.tsx?raw"),
+    "shaders-demo.tsx",
+  ),
   limit: demo(
     () => import("./limit-demo"),
     (m) => m.LimitDemo,
