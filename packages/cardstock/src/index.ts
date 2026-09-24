@@ -7,6 +7,12 @@ export type { CardRootProps, CardRootState } from "./card/root";
 export type { CardBodyProps, CardBodyState, CardFaceProps, CardFaceState } from "./card/faces";
 export type { CardTriggerProps, CardTriggerState, CardRevealTriggerProps } from "./card/triggers";
 export type { CardRevealGroupProps } from "./card/reveal-group";
+export type {
+  CardCopyTriggerProps,
+  CardCopyTriggerState,
+  CardCopyStatus,
+  CardCopyResult,
+} from "./card/copy-trigger";
 export type { CardDigitsProps, CardDigitsState } from "./card/number";
 export type { CardFieldProps, CardFieldState } from "./card/fields";
 export type { CardTiltProps, CardTiltState } from "./card/tilt";

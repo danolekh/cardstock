@@ -90,6 +90,24 @@ Or pass a function as children and render the cells however you like:
 
 Masking only changes what is displayed. The full value is still in your props, so your app is responsible for authorizing access to it and for how it is fetched and held.
 
+## Copying
+
+`Card.CopyTrigger` copies a detail. It is only enabled while that detail shows: it's disabled while hidden or frozen, and it never copies on its own when the detail is revealed. Like the other parts, it follows the group around it or the one named by `group`.
+
+```tsx
+<Card.CopyTrigger
+  group="number"
+  value={pan.replace(/\s/g, "")}
+  onCopyResult={(r) => toast(r.ok ? "Copied" : "Couldn't copy")}
+>
+  Copy number
+</Card.CopyTrigger>
+```
+
+- It writes with `navigator.clipboard.writeText` by default. Pass `copy` to use your own adapter, such as a native bridge or a test double. Throw or reject to report a failure.
+- `data-status` is `idle`, `copied` or `failed`, and goes back to `idle` after `resetMs` (2000). It also resets as soon as the detail hides.
+- `onCopyResult` receives `{ ok: true }` or `{ ok: false, error }`, so the feedback stays yours.
+
 ## Holder and expiry
 
 `Card.Holder` and `Card.Expiry` render a `<span>` with `data-revealed`. Pass `maskWhenHidden` to mask the digits of their text until the card is revealed.

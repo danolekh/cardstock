@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Card } from "../index";
+import { Card, type CardCopyResult } from "../index";
 
 afterEach(cleanup);
 
@@ -207,5 +207,70 @@ describe("Card.RevealGroup", () => {
     expect(button("Show number").disabled).toBe(true);
     expect(number).toHaveBeenCalledWith(false);
     expect(code).toHaveBeenCalledWith(false);
+  });
+});
+
+describe("Card.CopyTrigger", () => {
+  afterEach(() => void vi.useRealTimers());
+
+  function Copyable(props: Partial<React.ComponentProps<typeof Card.CopyTrigger>> & { timeoutMs?: number }) {
+    const { timeoutMs, ...copy } = props;
+    return (
+      <Card.Root>
+        <Card.RevealGroup id="number" timeoutMs={timeoutMs} />
+        <Card.Number group="number" value="4821 5903 2716 4822" />
+        <Card.RevealTrigger group="number">Show number</Card.RevealTrigger>
+        <Card.CopyTrigger group="number" value="4821590327164822" {...copy}>
+          Copy
+        </Card.CopyTrigger>
+        <Card.FreezeTrigger>Freeze</Card.FreezeTrigger>
+      </Card.Root>
+    );
+  }
+
+  it("is disabled until its detail shows, and never copies on reveal", () => {
+    const copy = vi.fn<(text: string) => void>();
+    render(<Copyable copy={copy} />);
+    expect(button("Copy").disabled).toBe(true);
+    fireEvent.click(button("Show number"));
+    expect(button("Copy").disabled).toBe(false);
+    expect(copy).not.toHaveBeenCalled();
+    fireEvent.click(button("Freeze"));
+    expect(button("Copy").disabled).toBe(true);
+  });
+
+  it("copies the value and reports success, then settles back to idle", async () => {
+    vi.useFakeTimers();
+    const copy = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    const onCopyResult = vi.fn<(result: CardCopyResult) => void>();
+    render(<Copyable copy={copy} onCopyResult={onCopyResult} resetMs={1000} />);
+    fireEvent.click(button("Show number"));
+    await act(async () => void fireEvent.click(button("Copy")));
+    expect(copy).toHaveBeenCalledWith("4821590327164822");
+    expect(onCopyResult).toHaveBeenCalledWith({ ok: true });
+    expect(button("Copy").getAttribute("data-status")).toBe("copied");
+    act(() => void vi.advanceTimersByTime(1000));
+    expect(button("Copy").getAttribute("data-status")).toBe("idle");
+  });
+
+  it("reports a failed copy", async () => {
+    const error = new Error("denied");
+    const onCopyResult = vi.fn<(result: CardCopyResult) => void>();
+    render(<Copyable copy={() => Promise.reject(error)} onCopyResult={onCopyResult} />);
+    fireEvent.click(button("Show number"));
+    await act(async () => void fireEvent.click(button("Copy")));
+    expect(onCopyResult).toHaveBeenCalledWith({ ok: false, error });
+    expect(button("Copy").getAttribute("data-status")).toBe("failed");
+  });
+
+  it("is disabled again, and its feedback cleared, once the detail times out", async () => {
+    vi.useFakeTimers();
+    render(<Copyable copy={() => {}} timeoutMs={500} resetMs={5000} />);
+    fireEvent.click(button("Show number"));
+    await act(async () => void fireEvent.click(button("Copy")));
+    expect(button("Copy").getAttribute("data-status")).toBe("copied");
+    act(() => void vi.advanceTimersByTime(500));
+    expect(button("Copy").disabled).toBe(true);
+    expect(button("Copy").getAttribute("data-status")).toBe("idle");
   });
 });

@@ -6,6 +6,7 @@ export {
   CardRevealTrigger as RevealTrigger,
   CardFreezeTrigger as FreezeTrigger,
 } from "./triggers";
+export { CardCopyTrigger as CopyTrigger } from "./copy-trigger";
 export { CardRevealGroup as RevealGroup } from "./reveal-group";
 export { CardNumber as Number, CardSecurityCode as SecurityCode } from "./number";
 export { CardHolder as Holder, CardExpiry as Expiry } from "./fields";
