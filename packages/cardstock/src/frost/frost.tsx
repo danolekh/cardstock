@@ -22,6 +22,8 @@ const FALLBACK =
   "linear-gradient(120deg, rgba(222,238,255,0.72), rgba(236,245,255,0.55) 45%, rgba(248,251,255,0.75))";
 const FILL: React.CSSProperties = { position: "absolute", inset: 0, pointerEvents: "none" };
 const dpr = () => Math.min(window.devicePixelRatio || 1, 2);
+/** A lost context is rebuilt once; a second loss this soon after means the GPU won't keep one. */
+const LOSS_WINDOW_MS = 10_000;
 
 /** Frosts the face it sits in as the card freezes. Put it inside `Card.Front` or `Card.Back`,
  * after the content it should cover; the face needs `position: relative` and `overflow: hidden`.
@@ -33,6 +35,9 @@ export function Frost(props: FrostProps): React.ReactElement {
   const gradientRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
+  // Bumped when the browser takes the WebGL context away, to start over on a fresh canvas.
+  const [session, setSession] = useState(0);
+  const lastLoss = useRef(-Infinity);
   const stopsRef = useRef(stops);
   useLayoutEffect(() => {
     stopsRef.current = stops;
@@ -89,11 +94,24 @@ export function Frost(props: FrostProps): React.ReactElement {
         })
         .catch(() => setFailed(true));
     };
+    // The browser can drop the context later (GPU reset, too many contexts): show the gradient at
+    // once, then rebuild, or settle for the gradient if it keeps happening.
+    const onLost = () => {
+      live = false;
+      setReady(false);
+      const now = performance.now();
+      if (now - lastLoss.current < LOSS_WINDOW_MS) setFailed(true);
+      else setSession((n) => n + 1);
+      lastLoss.current = now;
+    };
+    canvas.addEventListener("webglcontextlost", onLost);
     const ro = new ResizeObserver(() => resnap.current());
     ro.observe(canvas);
     const unsubscribe = freeze.subscribe(redraw);
     return () => {
       live = false;
+      // dispose() loses the context on purpose; that isn't a loss to recover from.
+      canvas.removeEventListener("webglcontextlost", onLost);
       cancelAnimationFrame(raf);
       ro.disconnect();
       unsubscribe();
@@ -102,7 +120,9 @@ export function Frost(props: FrostProps): React.ReactElement {
       canvas.remove();
       setReady(false);
     };
-  }, [useShader, freeze]);
+    // `session` is a trigger: after a lost context, the same setup on a fresh canvas.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+  }, [useShader, freeze, session]);
 
   // Retake the snapshot when the face changes, after a beat (a stream of changes, like scrubbing
   // a limit, shouldn't clone the face every step) and again once its transitions have settled.
@@ -110,9 +130,9 @@ export function Frost(props: FrostProps): React.ReactElement {
     const a = setTimeout(() => resnap.current(), 120);
     const b = setTimeout(() => resnap.current(), 800);
     return () => (clearTimeout(a), clearTimeout(b));
-    // `version` and `useShader` are the triggers: a changed face, or a new WebGL session.
+    // `version`, `useShader` and `session` are the triggers: a changed face, or a new WebGL session.
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [version, useShader]);
+  }, [version, useShader, session]);
 
   // The gradient follows the freeze directly, and fades out once the shader has taken over.
   const showGradient = !useShader || !ready;

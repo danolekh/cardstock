@@ -73,4 +73,19 @@ The face turns to frosted glass from the middle out, following the freeze progre
 
 - Anything marked `data-frost-skip` is left out of the snapshot. Use it for things that should stay sharp above the frost.
 - Without WebGL2, the gradient is used.
+- If the browser drops the WebGL context later (a GPU reset, or too many live contexts), the gradient returns at once and the shader is rebuilt on a fresh canvas. If the context is lost again within 10 seconds, the gradient stays.
 - The gradient also covers the face until the shader's first frame, so a frozen card is never shown bare.
+
+### What Frost captures
+
+A shader can't read the page, so Frost redraws the face into a canvas and refracts that. The snapshot includes:
+
+- background colours, with the top-left border radius
+- `url()` background images, with `background-size`, `-position` and `-repeat`
+- `<img>` elements, with `object-fit` and `object-position`
+- inline SVGs
+- text
+
+It leaves out CSS gradients (pass `stops` for the face's own), borders, shadows, filters, transforms, pseudo-elements, video and canvas.
+
+An image from another origin is requested with CORS. If its server doesn't allow that, the image is left out of the snapshot and everything else is still drawn. Serve card artwork from your own origin or with `Access-Control-Allow-Origin` so the frost can use it.

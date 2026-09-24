@@ -4,7 +4,11 @@
  * (MsySzy): sample the face at noise-jittered coordinates, tint it towards ice, and reveal that
  * through a vignette that grows with the freeze, its edge broken up by a coarse "ice spread"
  * noise. A shader can't read the DOM, so the face is first redrawn into a 2D canvas from an
- * untransformed clone (backgrounds, SVGs, text), and that becomes the texture.
+ * untransformed clone, and that becomes the texture. The snapshot draws background colours (with
+ * the top-left radius), `url()` background images (size, position and repeat), <img>s (object-fit
+ * and object-position), inline SVGs, and text. Gradients in CSS aren't drawn (pass `stops` for the
+ * face's own), nor are borders, shadows, filters, transforms or pseudo-elements. A cross-origin
+ * image is fetched with CORS; one its server doesn't allow is left out, not the whole snapshot.
  *
  * Each pixel is a pure function of the freeze progress, so a reversal mid-way walks back through
  * the same frames. Without WebGL2, or with `webgl={false}`, a frosted gradient fades instead;
@@ -12,6 +16,8 @@
  * session gets a fresh canvas (a canvas whose context was lost hands it back dead forever), and
  * the gradient stands in until the shader has its first snapshot, so a frozen card never shows
  * bare. Anything marked `data-frost-skip` is left out of the snapshot. */
+
+import { fitSize, imageUrl, place, type Rect, splitLayers, tiles } from "./fit";
 
 const VERT = `#version 300 es
 in vec2 a;
@@ -93,8 +99,30 @@ const INHERITED = [
   "direction",
 ];
 
+type Op =
+  | { kind: "box"; x: number; y: number; w: number; h: number; r: number; color: string }
+  | { kind: "svg"; x: number; y: number; w: number; h: number; img: HTMLImageElement }
+  | {
+      kind: "image";
+      box: Rect;
+      r: number;
+      size: string;
+      position: string;
+      repeat: string;
+      img: Promise<HTMLImageElement | null>;
+    }
+  | {
+      kind: "text";
+      x: number;
+      y: number;
+      text: string;
+      font: string;
+      color: string;
+      spacing: string;
+    };
+
 /** Redraws the card face into a canvas: an untransformed clone is laid out off-screen, then each
- * background, SVG and text run is drawn where the browser placed it. */
+ * background, image, SVG and text run is drawn where the browser placed it. */
 export async function snapshotFace(
   face: HTMLElement,
   stops: readonly Stop[],
@@ -122,20 +150,14 @@ export async function snapshotFace(
   host.appendChild(clone);
   document.body.appendChild(host);
 
-  type Op =
-    | { kind: "box"; x: number; y: number; w: number; h: number; r: number; color: string }
-    | { kind: "svg"; x: number; y: number; w: number; h: number; img: HTMLImageElement }
-    | {
-        kind: "text";
-        x: number;
-        y: number;
-        text: string;
-        font: string;
-        color: string;
-        spacing: string;
-      };
   const ops: Op[] = [];
   const loads: Promise<unknown>[] = [];
+  const images = new Map<string, Promise<HTMLImageElement | null>>();
+  const image = (src: string, box: Rect, r: number, size: string, position: string, repeat: string) => {
+    let img = images.get(src);
+    if (!img) images.set(src, (img = loadImage(src)));
+    ops.push({ kind: "image", box, r, size, position, repeat, img });
+  };
 
   try {
     const origin = host.getBoundingClientRect();
@@ -165,18 +187,35 @@ export async function snapshotFace(
       if (node instanceof HTMLElement) {
         const cs = getComputedStyle(node);
         if (cs.display === "none" || cs.opacity === "0") return;
-        if (node !== clone && !/rgba\(.*,\s*0\)|transparent/.test(cs.backgroundColor)) {
-          const r = node.getBoundingClientRect();
-          const radius = Math.min(parseFloat(cs.borderTopLeftRadius) || 0, r.height / 2);
-          ops.push({
-            kind: "box",
-            x: r.left - origin.left,
-            y: r.top - origin.top,
-            w: r.width,
-            h: r.height,
-            r: radius,
-            color: cs.backgroundColor,
-          });
+        const r = node.getBoundingClientRect();
+        const box = { x: r.left - origin.left, y: r.top - origin.top, w: r.width, h: r.height };
+        const radius = Math.min(parseFloat(cs.borderTopLeftRadius) || 0, r.height / 2);
+        if (node !== clone && !/rgba\(.*,\s*0\)|transparent/.test(cs.backgroundColor))
+          ops.push({ kind: "box", ...box, r: radius, color: cs.backgroundColor });
+        if (cs.backgroundImage !== "none") {
+          const layers = splitLayers(cs.backgroundImage);
+          const nth = (list: string, i: number, fallback: string) => {
+            const values = splitLayers(list);
+            return values[i % values.length] ?? fallback;
+          };
+          // The first layer is painted on top, so draw from the last.
+          for (let i = layers.length - 1; i >= 0; i--) {
+            const src = imageUrl(layers[i]!);
+            if (src)
+              image(
+                src,
+                box,
+                radius,
+                nth(cs.backgroundSize, i, "auto"),
+                nth(cs.backgroundPosition, i, "0% 0%"),
+                nth(cs.backgroundRepeat, i, "repeat"),
+              );
+          }
+        }
+        if (node instanceof HTMLImageElement) {
+          const src = node.currentSrc || node.src;
+          if (src) image(src, box, radius, cs.objectFit, cs.objectPosition, "no-repeat");
+          return;
         }
         node.childNodes.forEach(visit);
         return;
@@ -203,7 +242,45 @@ export async function snapshotFace(
     host.remove();
   }
   await Promise.all(loads);
+  const loaded = new Map<Op, HTMLImageElement | null>();
+  await Promise.all(ops.map(async (op) => op.kind === "image" && loaded.set(op, await op.img)));
 
+  const drawn = paint(face, w, h, dpr, stops, ops, loaded);
+  if (!loaded.size) return drawn;
+  // A cross-origin image served without CORS would taint the canvas, and WebGL refuses a tainted
+  // texture. loadImage() leaves such images out, but a redirect can still slip one in: then the
+  // face is drawn again without images.
+  try {
+    drawn.getContext("2d")!.getImageData(0, 0, 1, 1);
+    return drawn;
+  } catch {
+    return paint(face, w, h, dpr, stops, ops, new Map());
+  }
+}
+
+/** Loads an image for the snapshot. Other origins are asked for CORS, so the canvas stays readable;
+ * null when it can't load that way. */
+function loadImage(src: string): Promise<HTMLImageElement | null> {
+  const img = new Image();
+  const url = new URL(src, document.baseURI);
+  if (url.origin !== location.origin && url.protocol !== "data:" && url.protocol !== "blob:")
+    img.crossOrigin = "anonymous";
+  return new Promise((done) => {
+    img.onload = () => done(img);
+    img.onerror = () => done(null);
+    img.src = url.href;
+  });
+}
+
+function paint(
+  face: HTMLElement,
+  w: number,
+  h: number,
+  dpr: number,
+  stops: readonly Stop[],
+  ops: readonly Op[],
+  images: ReadonlyMap<Op, HTMLImageElement | null>,
+): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(h * dpr);
@@ -230,6 +307,17 @@ export async function snapshotFace(
       ctx.fill();
     } else if (op.kind === "svg") {
       if (op.img.naturalWidth) ctx.drawImage(op.img, op.x, op.y, op.w, op.h);
+    } else if (op.kind === "image") {
+      const img = images.get(op);
+      if (!img?.naturalWidth || !img.naturalHeight) continue;
+      const natural = { w: img.naturalWidth, h: img.naturalHeight };
+      const first = place(op.box, fitSize(op.box, natural, op.size), op.position);
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(op.box.x, op.box.y, op.box.w, op.box.h, op.r);
+      ctx.clip();
+      for (const t of tiles(op.box, first, op.repeat)) ctx.drawImage(img, t.x, t.y, t.w, t.h);
+      ctx.restore();
     } else {
       ctx.font = op.font;
       ctx.fillStyle = op.color;
