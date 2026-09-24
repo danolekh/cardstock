@@ -3,7 +3,7 @@ import type * as React from "react";
 import { useEffect, useState } from "react";
 
 import { type PartProps, usePart } from "../utils/part";
-import { useCard } from "./context";
+import { type RevealScope, useCard, useRevealScope } from "./context";
 import { type Cell, decodeAt, type MaskOptions } from "./mask";
 
 export interface CardDigitsState extends Record<string, unknown> {
@@ -23,10 +23,12 @@ export interface CardDigitsProps extends Omit<PartProps<"span", CardDigitsState>
   /** Render the cells yourself. By default each is a `<span>` with `data-char-state`,
    * `--char-index` and `--group-index`. */
   children?: (cells: Cell[]) => React.ReactNode;
+  /** Follow this `Card.RevealGroup` instead of the one around it, or the whole card. */
+  group?: string;
 }
 
-function useCells(value: string, options: MaskOptions & { scramble: boolean }) {
-  const { reveal, reducedMotion } = useCard();
+function useCells(value: string, { reveal }: RevealScope, options: MaskOptions & { scramble: boolean }) {
+  const { reducedMotion } = useCard();
   const scramble = options.scramble && !reducedMotion;
   const read = () => decodeAt(value, reveal.get(), { ...options, scramble });
   const [cells, setCells] = useState(read);
@@ -50,10 +52,12 @@ function Digits(slot: string, label: (value: string, revealed: boolean) => strin
       visible = defaults.visible,
       reveal = "scramble",
       children,
+      group,
       ...rest
     } = props;
-    const { revealed } = useCard();
-    const { cells, animating } = useCells(value, { mask, visible, scramble: reveal === "scramble" });
+    const scope = useRevealScope(group);
+    const { revealed } = scope;
+    const { cells, animating } = useCells(value, scope, { mask, visible, scramble: reveal === "scramble" });
     const content = children
       ? children(cells)
       : cells.map((cell) => (
@@ -69,6 +73,7 @@ function Digits(slot: string, label: (value: string, revealed: boolean) => strin
     // A plain span can't carry a name, so what a screen reader hears is visually hidden text,
     // and the cells (with their scramble) are hidden from it.
     return usePart(slot, "span", { revealed, animating }, rest, {
+      "data-reveal-group": scope.group,
       style: { "--char-count": cells.length } as React.CSSProperties,
       children: (
         <>

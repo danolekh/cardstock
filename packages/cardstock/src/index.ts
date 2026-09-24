@@ -1,11 +1,12 @@
 export * as Card from "./card/index.parts";
-export { useCard, type CardContextValue } from "./card/context";
+export { useCard, useRevealScope, type CardContextValue, type RevealScope } from "./card/context";
 export { REVEAL_TIMING, FREEZE_TIMING } from "./card/root";
 export { maskText, decodeAt, type Cell, type CharState, type MaskOptions } from "./card/mask";
 export { Progress, cubicBezier, type Walk, type Easing } from "./utils/progress";
 export type { CardRootProps, CardRootState } from "./card/root";
 export type { CardBodyProps, CardBodyState, CardFaceProps, CardFaceState } from "./card/faces";
-export type { CardTriggerProps, CardTriggerState } from "./card/triggers";
+export type { CardTriggerProps, CardTriggerState, CardRevealTriggerProps } from "./card/triggers";
+export type { CardRevealGroupProps } from "./card/reveal-group";
 export type { CardDigitsProps, CardDigitsState } from "./card/number";
 export type { CardFieldProps, CardFieldState } from "./card/fields";
 export type { CardTiltProps, CardTiltState } from "./card/tilt";

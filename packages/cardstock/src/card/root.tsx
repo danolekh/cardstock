@@ -1,12 +1,13 @@
 "use client";
 import type * as React from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { usePrefersReducedMotion } from "../utils/media";
 import { type PartProps, usePart } from "../utils/part";
 import { type Walk, useProgress } from "../utils/progress";
 import { useControllableState } from "../utils/use-controllable-state";
-import { CardContext, type CardContextValue } from "./context";
+import { CardContext, type CardContextValue, createRevealGroupRegistry } from "./context";
+import { useRevealTimeout } from "./reveal-group";
 
 /** Under 300ms and easing out, so the first digits land at once; hiding is quicker still. */
 export const REVEAL_TIMING: Walk = { show: 0.3, hide: 0.15, ease: [0.23, 1, 0.32, 1] };
@@ -30,6 +31,8 @@ export interface CardRootProps extends PartProps<"div", CardRootState> {
   revealed?: boolean;
   defaultRevealed?: boolean;
   onRevealedChange?: (revealed: boolean) => void;
+  /** Hide the details again this long after revealing them. Off by default. */
+  revealTimeoutMs?: number;
   /** Timing of the reveal progress that drives `Card.Number`'s scramble. */
   revealTiming?: Walk;
   /** Timing of the freeze progress that drives `<Frost />`. */
@@ -48,6 +51,7 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
     revealed: revealedProp,
     defaultRevealed = false,
     onRevealedChange,
+    revealTimeoutMs,
     revealTiming = REVEAL_TIMING,
     freezeTiming = FREEZE_TIMING,
     ...rest
@@ -73,6 +77,8 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
   useEffect(() => {
     if (frozen && wantsReveal) setRevealed(false);
   }, [frozen, wantsReveal, setRevealed]);
+  useRevealTimeout(revealed, revealTimeoutMs, setRevealed);
+  const [revealGroups] = useState(createRevealGroupRegistry);
 
   const reducedMotion = usePrefersReducedMotion();
   const reveal = useProgress(revealed, revealTiming, reducedMotion);
@@ -90,6 +96,7 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
       freeze,
       revealTiming,
       reducedMotion,
+      revealGroups,
     }),
     [
       flipped,
@@ -102,6 +109,7 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
       freeze,
       revealTiming,
       reducedMotion,
+      revealGroups,
     ],
   );
   const state: CardRootState = { flipped, frozen, revealed };

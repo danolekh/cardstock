@@ -61,6 +61,35 @@ Or pass a function as children and render the cells however you like:
 
 `maskText()` and `decodeAt()` are exported too, as pure functions of the text and a 0–1 progress.
 
+## Reveal groups and timeouts
+
+`revealed` on `Card.Root` shows every detail at once. To show the number and the security code separately, give each its own `Card.RevealGroup`. A group renders no element. A part follows a group when the group wraps it, or when the part names the group with `group`. Naming works across faces, and from triggers outside the card:
+
+```tsx
+<Card.Root>
+  <Card.RevealGroup id="number" timeoutMs={30_000} />
+  <Card.RevealGroup id="code" timeoutMs={15_000} />
+  <Card.Body>
+    <Card.Front>
+      <Card.Number group="number" value={pan} />
+    </Card.Front>
+    <Card.Back>
+      <Card.SecurityCode group="code" value={securityCode} />
+    </Card.Back>
+  </Card.Body>
+  <Card.RevealTrigger group="number">Show number</Card.RevealTrigger>
+  <Card.RevealTrigger group="code">Show security code</Card.RevealTrigger>
+</Card.Root>
+```
+
+- A group takes `revealed`, `defaultRevealed` and `onRevealedChange`, just like the root.
+- `timeoutMs` hides the group again that long after each reveal. The digits scramble back and `onRevealedChange(false)` fires. A controlled group stays shown until you update it. For the card-wide reveal, use `revealTimeoutMs` on `Card.Root`.
+- The card-wide `revealed` shows every group. Hiding any group while it's on turns the card-wide reveal off too.
+- Freezing hides every group, disables its triggers, and tells each owner.
+- Grouped parts carry `data-reveal-group`. `useRevealScope(group?)` returns the same scope for your own parts.
+
+Masking only changes what is displayed. The full value is still in your props, so your app is responsible for authorizing access to it and for how it is fetched and held.
+
 ## Holder and expiry
 
 `Card.Holder` and `Card.Expiry` render a `<span>` with `data-revealed`. Pass `maskWhenHidden` to mask the digits of their text until the card is revealed.

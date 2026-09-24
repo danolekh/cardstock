@@ -2,7 +2,7 @@
 import type * as React from "react";
 
 import { type PartProps, usePart } from "../utils/part";
-import { useCard } from "./context";
+import { useRevealScope } from "./context";
 import { maskText } from "./mask";
 
 export interface CardFieldState extends Record<string, unknown> {
@@ -11,15 +11,21 @@ export interface CardFieldState extends Record<string, unknown> {
 export interface CardFieldProps extends PartProps<"span", CardFieldState> {
   /** Mask the digits of the text children until the details are revealed. */
   maskWhenHidden?: boolean;
+  /** Follow this `Card.RevealGroup` instead of the one around it, or the whole card. */
+  group?: string;
 }
 
-function useField(slot: string, { maskWhenHidden, children, ...props }: CardFieldProps) {
-  const { revealed } = useCard();
+function useField(slot: string, { maskWhenHidden, children, group, ...props }: CardFieldProps) {
+  const scope = useRevealScope(group);
+  const { revealed } = scope;
   const text =
     maskWhenHidden && !revealed && typeof children === "string"
       ? maskText(children, { visible: 0 })
       : children;
-  return usePart(slot, "span", { revealed }, props, { children: text });
+  return usePart(slot, "span", { revealed }, props, {
+    "data-reveal-group": scope.group,
+    children: text,
+  });
 }
 
 /** The cardholder's name. Renders a `<span>`. */
