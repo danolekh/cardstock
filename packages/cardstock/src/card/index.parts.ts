@@ -12,4 +12,5 @@ export { CardNumber as Number, CardSecurityCode as SecurityCode } from "./number
 export { CardHolder as Holder, CardExpiry as Expiry } from "./fields";
 export { CardFrozenOverlay as FrozenOverlay } from "./frozen-overlay";
 export { CardStatusPart as Status } from "./status";
+export { CardBackgroundPart as Background } from "./background";
 export { CardSpending as Spending, CardSpendingIndicator as SpendingIndicator } from "./spending";

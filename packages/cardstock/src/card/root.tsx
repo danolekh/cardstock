@@ -2,6 +2,7 @@
 import type * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 
+import { backgroundTone, type CardBackground, type Tone } from "../background/background";
 import { usePrefersReducedMotion } from "../utils/media";
 import { type PartProps, usePart } from "../utils/part";
 import { type Walk, useProgress } from "../utils/progress";
@@ -20,6 +21,10 @@ export interface CardRootState extends Record<string, unknown> {
   frozen: boolean;
   revealed: boolean;
   status: CardStatus | undefined;
+  /** The background's type, as `data-background`. */
+  background: CardBackground["type"] | undefined;
+  /** How the background reads, as `data-tone`: style light text on `dark`. */
+  tone: Tone | undefined;
 }
 
 export interface CardRootProps extends PartProps<"div", CardRootState> {
@@ -37,6 +42,9 @@ export interface CardRootProps extends PartProps<"div", CardRootState> {
   revealTimeoutMs?: number;
   /** How the card stands, for display only (`data-status`, `Card.Status`). */
   status?: CardStatus;
+  /** What the card is painted with, as data you can store. `Card.Background` paints it and
+   * `<Frost />` draws it; `data-tone` tells your text which way to go. */
+  background?: CardBackground;
   /** Timing of the reveal progress that drives `Card.Number`'s scramble. */
   revealTiming?: Walk;
   /** Timing of the freeze progress that drives `<Frost />`. */
@@ -57,6 +65,7 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
     onRevealedChange,
     revealTimeoutMs,
     status,
+    background,
     revealTiming = REVEAL_TIMING,
     freezeTiming = FREEZE_TIMING,
     ...rest
@@ -103,6 +112,7 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
       reducedMotion,
       revealGroups,
       status,
+      background,
     }),
     [
       flipped,
@@ -117,9 +127,17 @@ export function CardRoot(props: CardRootProps): React.ReactElement {
       reducedMotion,
       revealGroups,
       status,
+      background,
     ],
   );
-  const state: CardRootState = { flipped, frozen, revealed, status };
+  const state: CardRootState = {
+    flipped,
+    frozen,
+    revealed,
+    status,
+    background: background?.type,
+    tone: background ? backgroundTone(background) : undefined,
+  };
   const element = usePart("card", "div", state, rest, {});
   return <CardContext.Provider value={context}>{element}</CardContext.Provider>;
 }

@@ -18,5 +18,19 @@ export type { CardFieldProps, CardFieldState } from "./card/fields";
 export type { CardTiltProps, CardTiltState } from "./card/tilt";
 export type { CardFrozenOverlayProps, CardFrozenOverlayState } from "./card/frozen-overlay";
 export type { CardStatus, CardStatusProps, CardStatusState } from "./card/status";
+export type { CardBackgroundProps, CardBackgroundState } from "./card/background";
+export {
+  parseCardBackground,
+  backgroundTone,
+  backgroundInk,
+  backgroundStyle,
+  type CardBackground,
+  type SolidBackground,
+  type LinearBackground,
+  type RadialBackground,
+  type ImageBackground,
+  type ColorStop,
+  type Tone,
+} from "./background/background";
 export type { CardSpendingProps, CardSpendingState, CardSpendingIndicatorProps } from "./card/spending";
 export type { PartProps } from "./utils/part";

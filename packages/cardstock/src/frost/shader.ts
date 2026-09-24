@@ -6,7 +6,7 @@
  * noise. A shader can't read the DOM, so the face is first redrawn into a 2D canvas from an
  * untransformed clone, and that becomes the texture. The snapshot draws background colours (with
  * the top-left radius), `url()` background images (size, position and repeat), <img>s (object-fit
- * and object-position), inline SVGs, and text. Gradients in CSS aren't drawn (pass `stops` for the
+ * and object-position), inline SVGs, and text. Gradients in CSS aren't drawn (the card's `background`,
  * face's own), nor are borders, shadows, filters, transforms or pseudo-elements. A cross-origin
  * image is fetched with CORS; one its server doesn't allow is left out, not the whole snapshot.
  *
@@ -17,7 +17,8 @@
  * the gradient stands in until the shader has its first snapshot, so a frozen card never shows
  * bare. Anything marked `data-frost-skip` is left out of the snapshot. */
 
-import { fitSize, imageUrl, place, type Rect, splitLayers, tiles } from "./fit";
+import type { FrostBase } from "../background/background";
+import { farthestCorner, fitSize, imageUrl, linearEnds, place, type Rect, splitLayers, tiles } from "./fit";
 
 const VERT = `#version 300 es
 in vec2 a;
@@ -125,7 +126,7 @@ type Op =
  * background, image, SVG and text run is drawn where the browser placed it. */
 export async function snapshotFace(
   face: HTMLElement,
-  stops: readonly Stop[],
+  base: FrostBase | undefined,
   dpr: number,
 ): Promise<HTMLCanvasElement | null> {
   const w = face.offsetWidth;
@@ -245,7 +246,7 @@ export async function snapshotFace(
   const loaded = new Map<Op, HTMLImageElement | null>();
   await Promise.all(ops.map(async (op) => op.kind === "image" && loaded.set(op, await op.img)));
 
-  const drawn = paint(face, w, h, dpr, stops, ops, loaded);
+  const drawn = paint(face, w, h, dpr, base, ops, loaded);
   if (!loaded.size) return drawn;
   // A cross-origin image served without CORS would taint the canvas, and WebGL refuses a tainted
   // texture. loadImage() leaves such images out, but a redirect can still slip one in: then the
@@ -254,7 +255,7 @@ export async function snapshotFace(
     drawn.getContext("2d")!.getImageData(0, 0, 1, 1);
     return drawn;
   } catch {
-    return paint(face, w, h, dpr, stops, ops, new Map());
+    return paint(face, w, h, dpr, base, ops, new Map());
   }
 }
 
@@ -277,7 +278,7 @@ function paint(
   w: number,
   h: number,
   dpr: number,
-  stops: readonly Stop[],
+  base: FrostBase | undefined,
   ops: readonly Op[],
   images: ReadonlyMap<Op, HTMLImageElement | null>,
 ): HTMLCanvasElement {
@@ -287,15 +288,17 @@ function paint(
   const ctx = canvas.getContext("2d")!;
   ctx.scale(dpr, dpr);
 
-  // The CSS 135deg gradient, exactly: its line runs corner to corner through the centre.
-  const a = (135 * Math.PI) / 180;
-  const half = (Math.abs(w * Math.sin(a)) + Math.abs(h * Math.cos(a))) / 2;
-  const [dx, dy] = [Math.sin(a) * half, -Math.cos(a) * half];
-  if (stops.length) {
-    const g = ctx.createLinearGradient(w / 2 - dx, h / 2 - dy, w / 2 + dx, h / 2 + dy);
-    for (const [color, at] of stops) g.addColorStop(at, color);
+  // The background under everything, as CSS would paint it; without one, the face's own colour.
+  if (base?.kind === "linear") {
+    const g = ctx.createLinearGradient(...linearEnds(w, h, base.angle));
+    for (const [color, at] of base.stops) g.addColorStop(at, color);
     ctx.fillStyle = g;
-  } else ctx.fillStyle = getComputedStyle(face).backgroundColor;
+  } else if (base?.kind === "radial") {
+    const [x, y] = [base.at[0] * w, base.at[1] * h];
+    const g = ctx.createRadialGradient(x, y, 0, x, y, farthestCorner(w, h, x, y));
+    for (const [color, at] of base.stops) g.addColorStop(at, color);
+    ctx.fillStyle = g;
+  } else ctx.fillStyle = base?.color ?? getComputedStyle(face).backgroundColor;
   ctx.fillRect(0, 0, w, h);
 
   ctx.textBaseline = "middle";

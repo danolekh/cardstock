@@ -2,6 +2,7 @@
 import type * as React from "react";
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 
+import type { CardBackground } from "../background/background";
 import type { Progress, Walk } from "../utils/progress";
 import type { CardStatus } from "./status";
 
@@ -21,6 +22,8 @@ export interface CardContextValue {
   reducedMotion: boolean;
   /** How the card stands, for display: see `Card.Status`. */
   status: CardStatus | undefined;
+  /** What the card is painted with: see `Card.Background`. */
+  background: CardBackground | undefined;
   /** The card's `Card.RevealGroup`s, by id. */
   revealGroups: RevealGroupRegistry;
 }

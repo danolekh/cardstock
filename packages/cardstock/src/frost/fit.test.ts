@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fitSize, imageUrl, place, splitLayers, tiles } from "./fit";
+import { farthestCorner, fitSize, imageUrl, linearEnds, place, splitLayers, tiles } from "./fit";
 
 const box = { x: 0, y: 0, w: 200, h: 100 };
 const square = { w: 50, h: 50 };
@@ -53,5 +53,18 @@ describe("layers", () => {
     const layers = splitLayers('url("a.png"), linear-gradient(red, blue), url(b.jpg)');
     expect(layers).toHaveLength(3);
     expect(layers.map(imageUrl)).toEqual(["a.png", null, "b.jpg"]);
+  });
+});
+
+describe("gradients", () => {
+  it("runs a linear gradient through the centre, corner to corner at 135deg", () => {
+    const [x0, y0, x1, y1] = linearEnds(200, 100, 135).map((v) => Math.round(v));
+    expect([x0, y0, x1, y1]).toEqual([25, -25, 175, 125]);
+    expect(linearEnds(200, 100, 90).map((v) => Math.round(v))).toEqual([0, 50, 200, 50]);
+  });
+
+  it("reaches the farthest corner", () => {
+    expect(farthestCorner(200, 100, 0, 0)).toBeCloseTo(Math.hypot(200, 100));
+    expect(farthestCorner(200, 100, 100, 50)).toBeCloseTo(Math.hypot(100, 50));
   });
 });

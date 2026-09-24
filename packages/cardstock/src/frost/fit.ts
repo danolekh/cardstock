@@ -92,6 +92,20 @@ export function place(box: Rect, drawn: Size, position: string): Rect {
   };
 }
 
+/** The ends of a CSS `linear-gradient(<angle>deg, …)` line in a w×h box: through the centre, long
+ * enough that the corners land on 0% and 100%. */
+export function linearEnds(w: number, h: number, angle: number): [number, number, number, number] {
+  const a = (angle * Math.PI) / 180;
+  const half = (Math.abs(w * Math.sin(a)) + Math.abs(h * Math.cos(a))) / 2;
+  const [dx, dy] = [Math.sin(a) * half, -Math.cos(a) * half];
+  return [w / 2 - dx, h / 2 - dy, w / 2 + dx, h / 2 + dy];
+}
+
+/** The radius of a CSS `circle farthest-corner` radial gradient centred at (x, y). */
+export function farthestCorner(w: number, h: number, x: number, y: number): number {
+  return Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, h - y), Math.hypot(w - x, h - y));
+}
+
 const MAX_TILES = 400;
 
 /** The copies of a background image that cover the box under `background-repeat` (`space` and

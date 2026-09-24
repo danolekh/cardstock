@@ -314,3 +314,72 @@ describe("Card.Status", () => {
     expect(slot("card-status").textContent).toBe("Card inactive");
   });
 });
+
+describe("Card.Background", () => {
+  const gradient = {
+    type: "linear",
+    stops: [
+      ["#34322d", 0],
+      ["#080807", 1],
+    ],
+  } as const;
+  const image = {
+    type: "image",
+    src: "/bg/holo.webp",
+    srcSet: "/bg/holo-860.webp 860w",
+    color: "#6d5a8f",
+  } as const;
+
+  it("tells the root its type and tone", () => {
+    render(<Card.Root background={{ type: "solid", color: "#fbf8f1" }} />);
+    expect(slot("card").getAttribute("data-background")).toBe("solid");
+    expect(slot("card").getAttribute("data-tone")).toBe("light");
+  });
+
+  it("paints a gradient on itself", () => {
+    render(
+      <Card.Root background={gradient}>
+        <Card.Background />
+      </Card.Root>,
+    );
+    expect(slot("card-background").style.backgroundImage).toContain("linear-gradient(135deg");
+    expect(slot("card-background").getAttribute("data-type")).toBe("linear");
+    expect(slot("card-background").getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("draws an image over its colour, and reports how it loaded", () => {
+    render(
+      <Card.Root background={image}>
+        <Card.Background loading="lazy" />
+      </Card.Root>,
+    );
+    const img = slot("card-background-image") as HTMLImageElement;
+    expect(img.getAttribute("srcset")).toBe("/bg/holo-860.webp 860w");
+    expect(img.getAttribute("alt")).toBe("");
+    expect(img.getAttribute("loading")).toBe("lazy");
+    expect(slot("card-background").style.backgroundColor).toBeTruthy();
+    expect(slot("card-background").hasAttribute("data-loaded")).toBe(false);
+    fireEvent.load(img);
+    expect(slot("card-background").hasAttribute("data-loaded")).toBe(true);
+  });
+
+  it("marks a failed image, leaving its colour", () => {
+    render(
+      <Card.Root background={image}>
+        <Card.Background />
+      </Card.Root>,
+    );
+    fireEvent.error(slot("card-background-image"));
+    expect(slot("card-background").hasAttribute("data-error")).toBe(true);
+  });
+
+  it("paints its own value over the card's", () => {
+    render(
+      <Card.Root background={image}>
+        <Card.Background value={{ type: "solid", color: "#111" }} />
+      </Card.Root>,
+    );
+    expect(slot("card-background").getAttribute("data-type")).toBe("solid");
+    expect(slot("card-background-image")).toBeNull();
+  });
+});

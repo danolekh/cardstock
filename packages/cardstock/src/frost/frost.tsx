@@ -2,13 +2,15 @@
 import type * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { frostBase } from "../background/background";
 import { useCard } from "../card/context";
 import { createFrost, snapshotFace, type Stop } from "./shader";
 
 export interface FrostProps {
   /** Use the WebGL2 shader. `false` draws the light gradient, which holds no WebGL context. */
   webgl?: boolean;
-  /** The face's background as gradient stops (drawn at 135deg); by default its background colour. */
+  /** The face's background as gradient stops (drawn at 135deg). By default the card's
+   * `background`, or else the face's background colour. */
   stops?: readonly Stop[];
   /** Change it whenever the face looks different (a new number, colour or limit) to retake the
    * snapshot the frost refracts. */
@@ -30,7 +32,14 @@ const LOSS_WINDOW_MS = 10_000;
  * Renders a `<div>` over the face with a canvas and the fallback in it. */
 export function Frost(props: FrostProps): React.ReactElement {
   const { webgl = true, stops = [], version = "", fallback = FALLBACK, className } = props;
-  const { freeze } = useCard();
+  const { freeze, background } = useCard();
+  const base = stops.length
+    ? ({ kind: "linear", angle: 135, stops } as const)
+    : background
+      ? frostBase(background)
+      : undefined;
+  // Compared by value: a new background (or new stops) retakes the snapshot.
+  const baseKey = JSON.stringify(base ?? null);
   const hostRef = useRef<HTMLDivElement>(null);
   const gradientRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
@@ -38,9 +47,9 @@ export function Frost(props: FrostProps): React.ReactElement {
   // Bumped when the browser takes the WebGL context away, to start over on a fresh canvas.
   const [session, setSession] = useState(0);
   const lastLoss = useRef(-Infinity);
-  const stopsRef = useRef(stops);
+  const baseRef = useRef(base);
   useLayoutEffect(() => {
-    stopsRef.current = stops;
+    baseRef.current = base;
   });
   const resnap = useRef<() => void>(() => {});
   // Compiling the shader and snapshotting the face cost a few frames, so it waits for an idle
@@ -85,7 +94,7 @@ export function Frost(props: FrostProps): React.ReactElement {
       if (!face) return;
       const mine = ++token;
       document.fonts.ready
-        .then(() => snapshotFace(face, stopsRef.current, dpr()))
+        .then(() => snapshotFace(face, baseRef.current, dpr()))
         .then((snap) => {
           if (!snap || mine !== token || !live) return;
           renderer.setFace(snap);
@@ -130,9 +139,10 @@ export function Frost(props: FrostProps): React.ReactElement {
     const a = setTimeout(() => resnap.current(), 120);
     const b = setTimeout(() => resnap.current(), 800);
     return () => (clearTimeout(a), clearTimeout(b));
-    // `version`, `useShader` and `session` are the triggers: a changed face, or a new WebGL session.
+    // `version`, `baseKey`, `useShader` and `session` are the triggers: a changed face or
+    // background, or a new WebGL session.
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [version, useShader, session]);
+  }, [version, baseKey, useShader, session]);
 
   // The gradient follows the freeze directly, and fades out once the shader has taken over.
   const showGradient = !useShader || !ready;
