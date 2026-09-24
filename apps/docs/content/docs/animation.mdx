@@ -1,0 +1,67 @@
+---
+title: Animation
+description: CSS, Motion, or nothing. The library doesn't choose.
+---
+
+cardstock animates two things itself, because they can't be done in CSS:
+
+- the **number scramble**, which changes text;
+- the **carousel's settling spring**, which carries the speed of your finger.
+
+Everything else is state, and moving it is up to you.
+
+## CSS
+
+Most cards need nothing else. Transition the variables and attributes:
+
+- the flip on `--card-flipped`;
+- the tilt on `--card-tilt-*`;
+- the frozen overlay on `data-starting-style` / `data-ending-style`;
+- the meter on `--card-spending-ratio`.
+
+Keep UI motion short. A reveal or a small state change should stay under 300ms and ease out. The freeze is the exception, because it's a moment meant to be watched.
+
+## Motion
+
+Pass a motion element to `render`, and read the state it animates on from `useCard()`:
+
+```tsx
+function Body({ children }) {
+  const { flipped } = useCard();
+  return (
+    <Card.Body
+      render={<motion.div animate={{ rotateY: flipped ? 180 : 0 }} transition={{ type: "spring" }} />}
+    >
+      {children}
+    </Card.Body>
+  );
+}
+```
+
+For per-frame values, subscribe instead of re-rendering. `useCard().reveal` and `useCard().freeze` are progress objects with `get()` and `subscribe(fn)`, and `useCardCarousel().position` works the same way.
+
+## Reduced motion
+
+The parts respect `prefers-reduced-motion`:
+
+- tilt switches off;
+- the number reveals without a scramble;
+- the carousel settles with a 200ms ease instead of a spring.
+
+In your CSS, swap movement for a short fade rather than removing everything. For example, cross-fade the faces instead of turning the card:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="card-body"],
+  [data-slot="card-back"] {
+    transform: none;
+  }
+  [data-slot="card-front"],
+  [data-slot="card-back"] {
+    transition: opacity 200ms;
+  }
+  [data-slot^="card-"]:not([data-visible])[data-side] {
+    opacity: 0;
+  }
+}
+```

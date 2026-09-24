@@ -1,0 +1,23 @@
+---
+title: Accessibility
+description: What the parts do for keyboard and screen-reader users, and what's left to you.
+---
+
+## Handled by the parts
+
+- **Triggers** are real buttons with `aria-pressed`. `Card.RevealTrigger` is disabled while the card is frozen.
+- **Faces:** the face turned away is `inert` and `aria-hidden`, so Tab never lands on the back of the card while you're looking at the front.
+- **Number:** screen readers hear "Card number ending in 4822", or the whole number once revealed, never the scramble. The cells are `aria-hidden`.
+- **Spending** is a `meter` whose spoken value uses your `format`.
+- **Carousel** follows the [APG carousel pattern](https://www.w3.org/WAI/ARIA/apg/patterns/carousel/):
+  - the viewport is a region with the role description "carousel", and ←/→ move between cards;
+  - each slide is a group labelled "2 of 4";
+  - slides that aren't current are `aria-hidden`.
+- **Motion:** see [reduced motion](/docs/animation#reduced-motion).
+
+## Left to you
+
+- Give `CardCarousel.Viewport` an `aria-label` and `tabIndex={0}`.
+- Take buttons on slides that aren't current out of the tab order (`tabIndex={-1}`).
+- Announce the frozen state in text next to the card, with `aria-live="polite"`.
+- Keep focus rings visible on the triggers and the flip button.

@@ -1,0 +1,60 @@
+{
+  "name": "@danolekh/cardstock",
+  "version": "0.1.0",
+  "description": "Headless, composable bank-card primitives for React: flip, tilt, masked number reveal, freeze, spending meter and a swipeable card carousel.",
+  "keywords": [
+    "base-ui",
+    "card",
+    "carousel",
+    "credit-card",
+    "fintech",
+    "headless",
+    "react"
+  ],
+  "homepage": "https://cardstock.danolekh.com",
+  "license": "MIT",
+  "author": "Dan Olekh <danyaolekhq@gmail.com> (https://danolekh.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danolekh/cardstock.git",
+    "directory": "packages/cardstock"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./carousel": "./dist/carousel/index.js",
+    "./frost": "./dist/frost/index.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown && node scripts/check-directives.mjs",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "lint:pkg": "publint"
+  },
+  "devDependencies": {
+    "@base-ui/react": "1.8.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "happy-dom": "20.14.5",
+    "publint": "0.3.24",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsdown": "0.23.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  },
+  "peerDependencies": {
+    "@base-ui/react": "^1.8.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "cardstock",
+  "homepage": "https://cardstock.danolekh.com",
+  "items": [
+    {
+      "name": "payment-card",
+      "type": "registry:component",
+      "title": "Payment card",
+      "description": "A styled card on the cardstock primitives: tilt with glare, flip, a decoding number, spending bar and WebGL frost.",
+      "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
+      "files": [{ "path": "registry/cardstock/payment-card.tsx", "type": "registry:component" }]
+    },
+    {
+      "name": "card-carousel",
+      "type": "registry:component",
+      "title": "Card swiper",
+      "description": "Swipe between cards with a spring snap and 3D neighbours, written in CSS over the carousel primitives.",
+      "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
+      "files": [{ "path": "registry/cardstock/card-carousel.tsx", "type": "registry:component" }]
+    },
+    {
+      "name": "limit-field",
+      "type": "registry:component",
+      "title": "Limit field",
+      "description": "A currency limit you change by dragging across its label, on Base UI's NumberField scrub area.",
+      "dependencies": ["@base-ui/react"],
+      "files": [{ "path": "registry/cardstock/limit-field.tsx", "type": "registry:component" }]
+    },
+    {
+      "name": "card-playground",
+      "type": "registry:block",
+      "title": "Card playground",
+      "description": "The swiper, cards, per-card freeze, reveal and limit together.",
+      "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
+      "registryDependencies": [
+        "https://cardstock.danolekh.com/r/payment-card.json",
+        "https://cardstock.danolekh.com/r/card-carousel.json",
+        "https://cardstock.danolekh.com/r/limit-field.json"
+      ],
+      "files": [{ "path": "registry/cardstock/card-playground.tsx", "type": "registry:component" }]
+    }
+  ]
+}

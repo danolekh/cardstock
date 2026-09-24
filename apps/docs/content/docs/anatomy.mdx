@@ -1,0 +1,48 @@
+---
+title: Anatomy
+description: How the parts fit together, and three ways to style the same card.
+---
+
+```tsx
+import { Card } from "@danolekh/cardstock";
+import { Frost } from "@danolekh/cardstock/frost";
+
+<Card.Root>
+  <Card.Tilt>
+    <Card.Body>
+      <Card.Front>
+        <Card.Number value="4821 5903 2716 4822" />
+        <Card.Holder>Max Mustermann</Card.Holder>
+        <Card.Expiry>09/29</Card.Expiry>
+        <Card.Spending value={842} max={1200}>
+          <Card.SpendingIndicator />
+        </Card.Spending>
+        <Frost />
+      </Card.Front>
+      <Card.Back>
+        <Card.SecurityCode value="731" />
+        <Card.FrozenOverlay />
+      </Card.Back>
+    </Card.Body>
+    <Card.FlipTrigger aria-label="Turn the card over" />
+  </Card.Tilt>
+  <Card.RevealTrigger />
+  <Card.FreezeTrigger />
+</Card.Root>;
+```
+
+`Card.FlipTrigger` lies over the card as a transparent button, instead of wrapping it, so the button's name is its label and the card's text stays readable on its own. Every part is optional apart from `Card.Root`. The triggers can go anywhere inside the root. You can also skip them and drive the state from outside, since every state works [controlled or uncontrolled](/docs/card#state).
+
+## Three ways to style one card
+
+**Tailwind**, from the registry:
+
+<ComponentPreview name="payment-card" />
+
+**Plain CSS**, with no Tailwind and no JavaScript animation. The styles read `[data-char-state]`, `--card-flipped` and `[data-starting-style]`:
+
+<ComponentPreview name="css-card" />
+
+**Motion**, where `render` swaps `Card.Body` for a `motion.div` and `useCard()` supplies the state it animates on:
+
+<ComponentPreview name="motion-card" />

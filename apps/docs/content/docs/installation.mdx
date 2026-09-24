@@ -1,0 +1,56 @@
+---
+title: Installation
+description: The headless package from npm, and styled copies from the registry.
+---
+
+## The package
+
+```bash
+pnpm add @danolekh/cardstock @base-ui/react
+```
+
+React 19 is required. The package is ESM only, tree-shakes per file, and every client module keeps its `"use client"` directive, so it works in React Server Component frameworks.
+
+## Your first card
+
+The parts are headless, so an unstyled card renders as plain text. The example below is a complete working card: the parts plus about twenty lines of plain CSS that size it, stack the faces, turn it over on `--card-flipped`, fix the digit cells and fade the frozen overlay. Open **Code** and copy the whole file.
+
+<ComponentPreview name="css-card" />
+
+Prefer it styled? Add the registry card instead:
+
+```bash
+pnpm dlx shadcn@latest add https://cardstock.danolekh.com/r/payment-card.json
+```
+
+## Status
+
+|                  |                                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| Version          | 0.1.0. Before 1.0, a minor version may change the API.                                                |
+| React            | 19                                                                                                    |
+| `@base-ui/react` | ^1.8 (peer dependency)                                                                                |
+| Module format    | ESM only                                                                                              |
+| Frameworks       | Safe for React Server Components: every client module keeps `"use client"`.                           |
+| Browsers         | Current evergreen browsers. WebGL2 is optional: without it, `<Frost />` falls back to a CSS gradient. |
+| Styling          | None required. The registry copies use Tailwind CSS v4.                                               |
+
+## Styled copies
+
+The styled components on these pages are a [shadcn registry](https://ui.shadcn.com/docs/registry). Adding one copies its source into your project, where you change it like your own code. They use Tailwind CSS v4.
+
+```bash
+pnpm dlx shadcn@latest add https://cardstock.danolekh.com/r/payment-card.json
+```
+
+| Item              | What it is                                                                 |
+| ----------------- | -------------------------------------------------------------------------- |
+| `payment-card`    | A card with tilt and glare, flip, decoding number, spending bar and frost. |
+| `card-carousel`   | The swiper: spring snap and 3D neighbours, written in CSS.                 |
+| `limit-field`     | A currency limit you change by dragging, on Base UI's `NumberField`.       |
+| `card-playground` | All of them together, as on the front page.                                |
+
+<Callout>
+  The registry components use `fd-*` colour tokens from these docs (`bg-fd-muted`, `border-fd-border`). Swap
+  them for your own after adding.
+</Callout>

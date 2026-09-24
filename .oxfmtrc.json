@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 110,
+  "sortTailwindcss": {},
+  "sortImports": {},
+  "ignorePatterns": [
+    "dist/",
+    ".output/",
+    ".tanstack/",
+    ".source/",
+    "**/routeTree.gen.ts",
+    "pnpm-lock.yaml",
+    "apps/docs/public/r/"
+  ]
+}

@@ -1,0 +1,101 @@
+---
+title: Card
+description: Root, faces, flip, tilt and triggers.
+---
+
+## State
+
+`Card.Root` holds three pieces of state. Each one can be controlled (`flipped` with `onFlippedChange`) or uncontrolled (`defaultFlipped`):
+
+- **flipped**: which face is towards the viewer;
+- **frozen**: the card is frozen;
+- **revealed**: the details (number, security code) are showing.
+
+A frozen card never shows its details. While `frozen` is set, `revealed` reads `false`, `Card.RevealTrigger` is disabled, and if you control `revealed`, `onRevealedChange(false)` tells you it was hidden.
+
+<TypeTable
+  type={{
+    flipped: { type: "boolean", description: "Controlled flip state." },
+    defaultFlipped: { type: "boolean", default: "false" },
+    onFlippedChange: { type: "(flipped: boolean) => void" },
+    frozen: { type: "boolean", description: "Controlled freeze state." },
+    defaultFrozen: { type: "boolean", default: "false" },
+    onFrozenChange: { type: "(frozen: boolean) => void" },
+    revealed: { type: "boolean", description: "Controlled reveal state. Always false while frozen." },
+    defaultRevealed: { type: "boolean", default: "false" },
+    onRevealedChange: { type: "(revealed: boolean) => void" },
+    revealTiming: {
+      type: "Walk",
+      default: "{ show: 0.3, hide: 0.15, ease: [0.23, 1, 0.32, 1] }",
+      description: "Seconds for a full reveal each way, and the curve. Drives the number's scramble.",
+    },
+    freezeTiming: {
+      type: "Walk",
+      default: "{ show: 0.75, hide: 0.75 }",
+      description: "Timing of the freeze progress that drives <Frost />.",
+    },
+    render: { type: "ReactElement | (props, state) => ReactElement", description: "Replace the element." },
+    className: { type: "string | (state) => string" },
+    style: { type: "CSSProperties | (state) => CSSProperties" },
+  }}
+/>
+
+`useCard()` returns the state and setters (`setFlipped`, `setFrozen`, `setRevealed`) to any component inside the root.
+
+## Body and faces
+
+`Card.Body` is the element that turns. It sets `--card-flipped` to `0` or `1`, and the turn itself is up to you:
+
+```css
+[data-slot="card-body"] {
+  transform-style: preserve-3d;
+  transform: rotateY(calc(var(--card-flipped) * 180deg));
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-slot="card-front"],
+[data-slot="card-back"] {
+  backface-visibility: hidden;
+}
+[data-slot="card-back"] {
+  transform: rotateY(180deg);
+}
+```
+
+If `Card.FlipTrigger` lies over the card as a transparent button, give `Card.Body` `pointer-events: none`. Once the card is turned in 3D (by a tilt, for example), the browser can place the faces in front of the button, and they would take its clicks.
+
+`Card.Front` and `Card.Back` carry `data-side` and, on the one facing you, `data-visible`. The face turned away is `inert` and `aria-hidden`, so it's out of the tab order and hidden from screen readers.
+
+## Tilt
+
+`Card.Tilt` follows the pointer and writes four variables without re-rendering:
+
+| Variable                               | Range  | Meaning                             |
+| -------------------------------------- | ------ | ----------------------------------- |
+| `--card-pointer-x`, `--card-pointer-y` | 0 … 1  | Pointer position across the element |
+| `--card-tilt-x`, `--card-tilt-y`       | −1 … 1 | Distance from the middle            |
+
+```css
+[data-slot="card-tilt"] {
+  transform: rotateX(calc(var(--card-tilt-y) * -10deg)) rotateY(calc(var(--card-tilt-x) * 12deg));
+  transition: transform 150ms ease-out;
+}
+```
+
+`data-hovering` is set while the pointer is over it. Tilt switches itself off (`data-disabled`) for touch screens and for people who prefer reduced motion. Pass `disabled` to switch it off yourself.
+
+## Triggers
+
+`Card.FlipTrigger`, `Card.RevealTrigger` and `Card.FreezeTrigger` render a `<button>` with `aria-pressed`, `data-pressed` and `data-disabled`. To change the label with the state, use `render`:
+
+```tsx
+<Card.RevealTrigger
+  render={(props, state) => <button {...props}>{state.pressed ? "Hide details" : "Show details"}</button>}
+/>
+```
+
+To use a Base UI `Switch` instead, read the state from `useCard()`:
+
+```tsx
+const { frozen, setFrozen } = useCard();
+<Switch.Root checked={frozen} onCheckedChange={setFrozen} />;
+```

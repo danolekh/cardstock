@@ -1,0 +1,76 @@
+---
+title: Freeze and frost
+description: The frozen state, as CSS or as a WebGL frost that spreads over the face.
+---
+
+Freezing is state on `Card.Root` (`frozen`, `defaultFrozen`, `onFrozenChange`), with `Card.FreezeTrigger` to toggle it. A frozen card:
+
+- sets `data-frozen` on the root;
+- hides the details, and disables `Card.RevealTrigger`;
+- mounts `Card.FrozenOverlay` and runs `<Frost />`.
+
+The state changes at once: `data-frozen`, the disabled reveal and `onFrozenChange` all happen on the click, and the 750ms frost is decoration on top. Nothing waits for the animation. Shorten it with `freezeTiming` on `Card.Root`, or drop the shader with `webgl={false}`.
+
+Say what the freeze means next to the card ("Frozen · payments paused"), not on it: the card already shows it.
+
+## CSS: `Card.FrozenOverlay`
+
+An empty `<div>` that is mounted while the card is frozen. Like Base UI popups, it carries `data-starting-style` on its first frame and `data-ending-style` while it leaves, and it waits for your transitions to finish before it unmounts:
+
+```css
+[data-slot="card-frozen-overlay"] {
+  position: absolute;
+  inset: 0;
+  background: rgb(214 236 255 / 0.55);
+  backdrop-filter: blur(3px);
+  transition: opacity 250ms ease;
+}
+[data-slot="card-frozen-overlay"][data-starting-style],
+[data-slot="card-frozen-overlay"][data-ending-style] {
+  opacity: 0;
+}
+```
+
+## WebGL: `<Frost />`
+
+```tsx
+import { Frost } from "@danolekh/cardstock/frost";
+
+<Card.Front className="relative overflow-hidden">
+  {/* … */}
+  <Frost
+    stops={[
+      ["#34322d", 0],
+      ["#171614", 0.55],
+      ["#080807", 1],
+    ]}
+    version={design}
+  />
+</Card.Front>;
+```
+
+The face turns to frosted glass from the middle out, following the freeze progress (750ms by default). If you unfreeze halfway, it walks back through the same frames. It is a port of "Spreading Frost" (shadertoy XddcRr). A shader can't read the DOM, so `Frost` redraws the face into a canvas from a clone and refracts that.
+
+<TypeTable
+  type={{
+    webgl: {
+      type: "boolean",
+      default: "true",
+      description:
+        "False draws a light frosted gradient instead, which holds no WebGL context. Use it for cards that aren't in focus: browsers cap live contexts.",
+    },
+    stops: {
+      type: "[color, at][]",
+      description: "The face's background gradient (drawn at 135deg). By default its background colour.",
+    },
+    version: {
+      type: "string | number",
+      description: "Change it when the face looks different, so the snapshot is retaken.",
+    },
+    fallback: { type: "string", description: "The CSS background of the fallback gradient." },
+  }}
+/>
+
+- Anything marked `data-frost-skip` is left out of the snapshot. Use it for things that should stay sharp above the frost.
+- Without WebGL2, the gradient is used.
+- The gradient also covers the face until the shader's first frame, so a frozen card is never shown bare.

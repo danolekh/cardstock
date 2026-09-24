@@ -1,0 +1,27 @@
+---
+title: Spending
+description: A meter for spending against a limit.
+---
+
+<ComponentPreview name="limit" />
+
+`Card.Spending` is a `role="meter"`. It sets `--card-spending-ratio` (0–1) and `data-over-limit`. It works without `Card.Root`, so it can also sit beside the card.
+
+```tsx
+<Card.Spending value={842} max={1200} format={eur}>
+  <Card.SpendingIndicator className="h-full origin-left scale-x-(--card-spending-ratio) transition-transform" />
+</Card.Spending>
+```
+
+<TypeTable
+  type={{
+    value: { type: "number", description: "Spent so far." },
+    max: { type: "number", description: "The limit." },
+    format: {
+      type: "(value: number) => string",
+      description: "Used for the spoken value, e.g. an Intl currency formatter.",
+    },
+  }}
+/>
+
+The limit field in the demo isn't a cardstock part. It is Base UI's `NumberField` with a `ScrubArea`: drag sideways across the label to change the value. It's in the registry as `limit-field`.

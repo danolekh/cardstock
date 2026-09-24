@@ -1,0 +1,26 @@
+---
+title: Introduction
+description: Headless, composable bank-card primitives for React.
+---
+
+<ComponentPreview name="playground" />
+
+cardstock is a set of parts for building payment-card UI: a card that flips and tilts, a number that stays masked and decodes when revealed, a frozen state with a frost that spreads over the face, a spending meter, and a carousel you swipe between cards with.
+
+The parts are **headless**. They render plain elements, hold the state, handle the keyboard and screen readers, and tell you what's going on through `data-*` attributes and CSS variables. How the card looks, and how (and whether) it moves, is yours:
+
+- style it with **Tailwind**, **plain CSS** or anything else;
+- animate it with **CSS transitions**, **Motion** through the `render` prop, or not at all;
+- or start from the **styled copies** in the registry and change them in your own codebase.
+
+The design follows [Base UI](https://base-ui.com): parts on a namespace (`Card.Root`, `Card.Front`, …), a `render` prop on every part, and `className` / `style` that can be functions of state. Like [shadcn/ui](https://ui.shadcn.com), the styled versions are code you copy in and own.
+
+## What's in it
+
+| Import                         | Parts                                                                                                                                                                                                      |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@danolekh/cardstock`          | `Card.Root`, `Tilt`, `Body`, `Front`, `Back`, `FlipTrigger`, `RevealTrigger`, `FreezeTrigger`, `Number`, `SecurityCode`, `Holder`, `Expiry`, `FrozenOverlay`, `Spending`, `SpendingIndicator`, `useCard()` |
+| `@danolekh/cardstock/carousel` | `CardCarousel.Root`, `Viewport`, `Track`, `Slide`, `Previous`, `Next`, `Indicator`, `useCardCarousel()`                                                                                                    |
+| `@danolekh/cardstock/frost`    | `Frost`: the WebGL2 frost for a frozen card                                                                                                                                                                |
+
+The library ships no CSS and has no animation dependency. Its only runtime dependency is `@base-ui/react`, which it shares with your app.

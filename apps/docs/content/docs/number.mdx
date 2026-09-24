@@ -1,0 +1,66 @@
+---
+title: Number and reveal
+description: A masked number that decodes digit by digit, in cells that never shift.
+---
+
+`Card.Number` shows the card number masked except for its last four digits. `Card.SecurityCode` masks all of it. When the card is revealed, the digits resolve left to right, each one cycling through a few random digits first.
+
+```tsx
+<Card.Number value="4821 5903 2716 4822" />
+<Card.SecurityCode value="731" />
+```
+
+## Timing
+
+The reveal takes 300ms and eases out (`cubic-bezier(0.23, 1, 0.32, 1)`), so the first digits land almost at once. Hiding takes 150ms. These follow [Emil Kowalski's rules](https://emilkowal.ski/ui/great-animations) for UI motion: stay under 300ms, ease out on the way in, and leave faster than you arrive. With reduced motion there is no scramble. Change the timing with `revealTiming` on `Card.Root`.
+
+## Cells
+
+Each character is its own `<span>` with:
+
+| Attribute / variable | Value                                                                 |
+| -------------------- | --------------------------------------------------------------------- |
+| `data-char-state`    | `static` (spaces, visible digits), `masked`, `scrambling`, `revealed` |
+| `--char-index`       | Position in the text                                                  |
+| `--group-index`      | Which four-digit group it's in                                        |
+
+The mask character `•` isn't a digit. The font it falls back to can be wider or taller than your digits, so give the cells a fixed width, or the line shifts while dots turn into digits:
+
+```css
+[data-char-state] {
+  display: inline-block;
+  width: 1ch;
+  text-align: center;
+}
+```
+
+## Your own reveal
+
+Set `reveal="none"` and the cells only switch between `masked` and `revealed`. You animate them yourself, for example staggered by `--char-index`:
+
+```css
+[data-char-state="revealed"] {
+  animation: in 180ms ease-out both;
+  animation-delay: calc(var(--char-index) * 12ms);
+}
+```
+
+Or pass a function as children and render the cells however you like:
+
+```tsx
+<Card.Number value={pan}>
+  {(cells) =>
+    cells.map((c) => (
+      <b key={c.index} data-state={c.state}>
+        {c.char}
+      </b>
+    ))
+  }
+</Card.Number>
+```
+
+`maskText()` and `decodeAt()` are exported too, as pure functions of the text and a 0–1 progress.
+
+## Holder and expiry
+
+`Card.Holder` and `Card.Expiry` render a `<span>` with `data-revealed`. Pass `maskWhenHidden` to mask the digits of their text until the card is revealed.

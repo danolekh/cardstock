@@ -1,0 +1,84 @@
+---
+title: Carousel
+description: Swipe between cards with a spring snap. The look is written in CSS.
+---
+
+<ComponentPreview name="swiper" />
+
+The carousel handles the gesture and the physics:
+
+- the track follows the finger 1:1 and rubber-bands past the ends;
+- a release lands on the card the speed points to, never more than one away;
+- a quick flick always moves one card, however short the drag;
+- the snap is a spring that keeps the speed of the release.
+
+The carousel doesn't position anything. Every frame, each slide gets its distance from the middle as CSS variables, and your CSS decides what that looks like.
+
+```tsx
+import { CardCarousel } from "@danolekh/cardstock/carousel";
+
+<CardCarousel.Root index={index} onIndexChange={setIndex}>
+  <CardCarousel.Viewport aria-label="Cards" tabIndex={0}>
+    <CardCarousel.Track>
+      {cards.map((card, i) => (
+        <CardCarousel.Slide key={card.id} index={i}>
+          …
+        </CardCarousel.Slide>
+      ))}
+    </CardCarousel.Track>
+  </CardCarousel.Viewport>
+  <CardCarousel.Previous />
+  <CardCarousel.Next />
+  {cards.map((card, i) => (
+    <CardCarousel.Indicator key={card.id} index={i} />
+  ))}
+</CardCarousel.Root>;
+```
+
+## Slide variables
+
+| Variable                 | Range   | Meaning                                       |
+| ------------------------ | ------- | --------------------------------------------- |
+| `--slide-offset`         | signed  | Slides from the middle: −1 is one to the left |
+| `--slide-offset-clamped` | −1 … 1  | The same, clamped                             |
+| `--slide-distance`       | 0 … 1   | How far from the middle, without the sign     |
+| `--carousel-position`    | 0 … n−1 | On the root: the track's fractional index     |
+
+Stack the slides in one grid cell and move each by its offset. This is the whole 3D look of the demo above:
+
+```css
+[data-slot="carousel-track"] {
+  display: grid;
+  transform-style: preserve-3d;
+}
+[data-slot="carousel-slide"] {
+  grid-area: 1 / 1;
+  transform: translateX(calc(var(--slide-offset) * (100% + 20px)))
+    translateZ(calc(var(--slide-distance) * -60px)) rotateY(calc(var(--slide-offset-clamped) * -24deg))
+    scale(calc(1 - var(--slide-distance) * 0.1));
+  opacity: calc(1 - var(--slide-distance) * 0.4);
+}
+```
+
+Tie anything else to `--carousel-position`, such as a backdrop colour that blends as you swipe.
+
+<TypeTable
+  type={{
+    index: { type: "number", description: "Controlled index." },
+    defaultIndex: { type: "number", default: "0" },
+    onIndexChange: { type: "(index: number) => void" },
+    snap: {
+      type: "{ stiffness, damping, mass? } | false",
+      default: "{ stiffness: 320, damping: 34 }",
+      description: "The settling spring. False jumps.",
+    },
+  }}
+/>
+
+`CardCarousel.Track` also takes `flickVelocity` (px/s, default 500) and `elastic` (share of the finger's travel past the ends, default 0.18). The physics functions (`snapTarget`, `rubberBand`, `stepSpring`) are exported as pure functions.
+
+## Slides and clicks
+
+- A click on a card that isn't current makes it current (`selectOnClick`).
+- The click that ends a drag is swallowed, so a swipe never presses a button on a card.
+- `data-active` marks the current slide. The others are `aria-hidden`, so take any buttons inside them out of the tab order.
