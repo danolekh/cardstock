@@ -7,26 +7,27 @@
       "name": "payment-card",
       "type": "registry:component",
       "title": "Payment card",
-      "description": "A styled card on the cardstock primitives: any background, tilt with glare, flip, a decoding number, spending bar and WebGL frost.",
+      "description": "A styled card on the cardstock primitives: any background (four gradients built in), tilt with glare, flip, a decoding number, spending bar and frost.",
       "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
-      "registryDependencies": ["https://cardstock.danolekh.com/r/card-backgrounds.json"],
-      "files": [{ "path": "registry/cardstock/payment-card.tsx", "type": "registry:component" }]
-    },
-    {
-      "name": "card-backgrounds",
-      "type": "registry:lib",
-      "title": "Card backgrounds",
-      "description": "Gradient presets and original artwork (guilloché, holo, aurora, topo, steel and more) as storable CardBackground data.",
-      "dependencies": ["@danolekh/cardstock"],
-      "files": [{ "path": "registry/cardstock/backgrounds.ts", "type": "registry:lib" }]
+      "files": [
+        {
+          "path": "registry/cardstock/payment-card.tsx",
+          "type": "registry:component"
+        }
+      ]
     },
     {
       "name": "card-carousel",
       "type": "registry:component",
       "title": "Card swiper",
-      "description": "Swipe between cards with a spring snap and 3D neighbours, written in CSS over the carousel primitives.",
+      "description": "Swipe between cards with a spring snap on the carousel's built-in coverflow, with tabs underneath.",
       "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
-      "files": [{ "path": "registry/cardstock/card-carousel.tsx", "type": "registry:component" }]
+      "files": [
+        {
+          "path": "registry/cardstock/card-carousel.tsx",
+          "type": "registry:component"
+        }
+      ]
     },
     {
       "name": "limit-field",
@@ -34,20 +35,30 @@
       "title": "Limit field",
       "description": "A currency limit you change by dragging across its label, on cardstock's LimitField (Base UI's NumberField).",
       "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
-      "files": [{ "path": "registry/cardstock/limit-field.tsx", "type": "registry:component" }]
+      "files": [
+        {
+          "path": "registry/cardstock/limit-field.tsx",
+          "type": "registry:component"
+        }
+      ]
     },
     {
       "name": "card-playground",
       "type": "registry:block",
       "title": "Card playground",
-      "description": "The swiper, cards, per-card freeze, reveal and limit together.",
+      "description": "The swiper, cards, per-card freeze, reveal and limit together. Pass it the backgrounds `npx @danolekh/cardstock-backgrounds add` writes for you.",
       "dependencies": ["@danolekh/cardstock", "@base-ui/react"],
       "registryDependencies": [
         "https://cardstock.danolekh.com/r/payment-card.json",
         "https://cardstock.danolekh.com/r/card-carousel.json",
         "https://cardstock.danolekh.com/r/limit-field.json"
       ],
-      "files": [{ "path": "registry/cardstock/card-playground.tsx", "type": "registry:component" }]
+      "files": [
+        {
+          "path": "registry/cardstock/card-playground.tsx",
+          "type": "registry:component"
+        }
+      ]
     }
   ]
 }

@@ -1,84 +1,248 @@
 ---
 title: Carousel
-description: Swipe between cards with a spring snap. The look is written in CSS.
+description: Swipe between cards with a spring snap, on a built-in coverflow you can tune or replace.
 ---
 
 <ComponentPreview name="swiper" />
 
-The carousel handles the gesture and the physics:
+The carousel handles the gesture, the physics and the look:
 
 - the track follows the finger 1:1 and rubber-bands past the ends;
 - a release lands on the card the speed points to, never more than one away;
 - a quick flick always moves one card, however short the drag;
-- the snap is a spring that keeps the speed of the release.
-
-The carousel doesn't position anything. Every frame, each slide gets its distance from the middle as CSS variables, and your CSS decides what that looks like.
+- the snap is a spring that keeps the speed of the release;
+- ←/→ move between cards (mirrored right to left), Home and End go to the ends;
+- the cards beside the middle one stand turned away and a little back.
 
 ```tsx
 import { CardCarousel } from "@danolekh/cardstock/carousel";
 
 <CardCarousel.Root index={index} onIndexChange={setIndex}>
-  <CardCarousel.Viewport aria-label="Cards" tabIndex={0}>
+  <CardCarousel.Viewport>
     <CardCarousel.Track>
-      {cards.map((card, i) => (
-        <CardCarousel.Slide key={card.id} index={i}>
-          …
+      {cards.map((card) => (
+        <CardCarousel.Slide key={card.id} label={card.name}>
+          {({ active }) => <PaymentCard {...card} active={active} />}
         </CardCarousel.Slide>
       ))}
     </CardCarousel.Track>
   </CardCarousel.Viewport>
   <CardCarousel.Previous />
   <CardCarousel.Next />
-  {cards.map((card, i) => (
-    <CardCarousel.Indicator key={card.id} index={i} />
-  ))}
+  <CardCarousel.Indicators />
 </CardCarousel.Root>;
 ```
 
-## Slide variables
+Slides need no index: the track numbers its children in order. The viewport is labelled, focusable and keyboard-driven out of the box, and the slides out of focus are `inert`.
 
-| Variable                 | Range   | Meaning                                       |
-| ------------------------ | ------- | --------------------------------------------- |
-| `--slide-offset`         | signed  | Slides from the middle: −1 is one to the left |
-| `--slide-offset-clamped` | −1 … 1  | The same, clamped                             |
-| `--slide-distance`       | 0 … 1   | How far from the middle, without the sign     |
-| `--carousel-position`    | 0 … n−1 | On the root: the track's fractional index     |
+## The built-in look
 
-Stack the slides in one grid cell and move each by its offset. This is the whole 3D look of the demo above:
+By default the carousel lays the slides out itself, as a coverflow: stacked in one grid cell, each moved by its distance from the middle, the neighbours narrower, slanted, smaller and faded. Tune it on the root:
+
+```tsx
+<CardCarousel.Root gap={24} turn={0.6} depth={0.08} fade={0.3}>
+```
+
+The turn is drawn in 2D (a narrower, slanted card) rather than with `rotateY` under `perspective`. A layer turned in 3D is drawn from a texture at a scale the browser has to guess, and some renderers smear fine artwork on it; a 2D transform stays sharp. For reduced motion, nothing turns or recedes, the fade stays, and the snap is a short ease.
+
+The styles are the parts' own inline styles, so your `style` wins property by property: pass `style={{ opacity: 1 }}` on the slides to drop the fade, say.
+
+## Your own look
+
+`effect="none"` writes no styles, only the variables. Every frame each slide gets its distance from the middle, and your CSS decides what that looks like:
+
+| Variable                                                 | On    | Meaning                                               |
+| -------------------------------------------------------- | ----- | ----------------------------------------------------- |
+| `--slide-offset`                                         | slide | Slides from the middle, signed: −1 is one before      |
+| `--slide-offset-clamped`                                 | slide | The same, clamped to −1 … 1                           |
+| `--slide-distance`                                       | slide | How far from the middle, 0 … 1, without the sign      |
+| `--carousel-position`                                    | root  | The track's fractional index, 0 … n−1                 |
+| `--carousel-gap`                                         | root  | `gap`, in px                                          |
+| `--carousel-turn`, `--carousel-depth`, `--carousel-fade` | root  | The tuning (0 for turn and depth with reduced motion) |
+| `--carousel-direction`                                   | root  | 1, or −1 right to left                                |
 
 ```css
 [data-slot="carousel-track"] {
   display: grid;
-  transform-style: preserve-3d;
 }
 [data-slot="carousel-slide"] {
   grid-area: 1 / 1;
-  transform: translateX(calc(var(--slide-offset) * (100% + 20px)))
-    translateZ(calc(var(--slide-distance) * -60px)) rotateY(calc(var(--slide-offset-clamped) * -24deg))
-    scale(calc(1 - var(--slide-distance) * 0.1));
-  opacity: calc(1 - var(--slide-distance) * 0.4);
+  transform: translateX(calc(var(--slide-offset) * (100% + 16px)))
+    scale(calc(1 - var(--slide-distance) * 0.15));
+  opacity: calc(1 - var(--slide-distance) * 0.5);
 }
 ```
 
-Tie anything else to `--carousel-position`, such as a backdrop colour that blends as you swipe.
+Tie anything else to `--carousel-position`, such as a backdrop colour that blends as you swipe. In JavaScript, `useCarouselPosition()` gives the same number to subscribe to, without re-rendering.
+
+## Slide content
+
+A slide's children can be a function of its state, or read it with `useCarouselSlide()` anywhere inside:
+
+```tsx
+<CardCarousel.Slide>{({ active, offset }) => <PaymentCard active={active} />}</CardCarousel.Slide>;
+
+function Badge() {
+  const { index, count, active } = useCarouselSlide();
+  return active ? (
+    <span>
+      {index + 1} of {count}
+    </span>
+  ) : null;
+}
+```
+
+`offset` is in whole slides (`index - current`); the moving value is in CSS. The slide also carries `data-active`, `data-side="previous | current | next"` and `data-index`.
+
+## Counting and server rendering
+
+The track counts its children, so on the client every part knows how many slides there are. While server-rendering, the parts outside the track (Previous, Next, the indicators) haven't heard the count yet: Next renders enabled until hydration. Pass `count` on the root when the first HTML should already be exact.
+
+If a slide isn't a direct child of the track (two slides in one wrapper component), give it `index`.
+
+## Clicks and hidden slides
+
+- A click on a card that isn't current makes it current (turn it off per slide with `selectOnClick={false}`). Slides out of focus are `inert`, so the track finds the one under the pointer.
+- The click that ends a drag is swallowed, so a swipe never presses a button on a card.
+- Being `inert`, a slide out of focus is hidden from assistive tech and out of the tab order, with nothing on it to press or focus. There's nothing to add to its buttons.
+- Keys typed into a field on a slide stay in the field.
+
+## Indicators
+
+`CardCarousel.Indicators` turns the indicators into tabs, one per slide: ←/→ and Home/End move between them, and each slide becomes its tab's panel. With no children it renders one per slide, labelled "Card 1", "Card 2"; give it `Indicator`s with text to show names:
+
+```tsx
+<CardCarousel.Indicators className="flex gap-2">
+  {cards.map((card) => (
+    <CardCarousel.Indicator key={card.id} className="data-active:font-medium">
+      {card.name}
+    </CardCarousel.Indicator>
+  ))}
+</CardCarousel.Indicators>
+```
+
+An `Indicator` outside `Indicators` is a plain button with `aria-current` on the current slide; give it `index`.
+
+## Labels
+
+Everything the carousel reads out is in `labels`, English by default:
+
+```tsx
+<CardCarousel.Root
+  labels={{
+    carousel: "Karten",
+    slide: (index, count, label) => `${label ? `${label}, ` : ""}${index + 1} von ${count}`,
+    previous: "Vorherige Karte",
+    next: "Nächste Karte",
+    indicators: "Karte wählen",
+    indicator: (index) => `Karte ${index + 1}`,
+  }}
+>
+```
+
+## Right to left
+
+The carousel follows the page's `direction`, or `dir` on the root: the track runs the other way, the drag and the arrow keys mirror, and so does the coverflow's turn.
+
+## Physics
+
+`snapTarget`, `rubberBand`, `stepSpring`, `isSettled` and `releaseVelocity` are exported as pure functions, with `DEFAULT_SPRING`, for building your own track.
+
+## API reference
+
+### Root
 
 <TypeTable
   type={{
     index: { type: "number", description: "Controlled index." },
     defaultIndex: { type: "number", default: "0" },
     onIndexChange: { type: "(index: number) => void" },
+    count: {
+      type: "number",
+      description:
+        "How many slides. Optional: the track counts its own. Give it for exact server-rendered HTML.",
+    },
+    effect: {
+      type: '"coverflow" | "none"',
+      default: '"coverflow"',
+      description: "The built-in look, or only the CSS variables.",
+    },
+    gap: {
+      type: "number",
+      default: "20",
+      description: "Space between slides in px; also part of the drag step.",
+    },
+    turn: { type: "number", default: "1", description: "How far the neighbours turn away. 0 is flat." },
+    depth: { type: "number", default: "0.1", description: "Scale a neighbour loses." },
+    fade: { type: "number", default: "0.4", description: "Opacity a neighbour loses." },
     snap: {
       type: "{ stiffness, damping, mass? } | false",
       default: "{ stiffness: 320, damping: 34 }",
       description: "The settling spring. False jumps.",
     },
+    flickVelocity: { type: "number", default: "500", description: "Speed in px/s that counts as a flick." },
+    elastic: {
+      type: "number",
+      default: "0.18",
+      description: "Share of the finger's travel followed past the ends.",
+    },
+    dir: { type: '"ltr" | "rtl"', description: "Which way slides run. By default the page's direction." },
+    labels: { type: "Partial<CardCarouselLabels>", description: "What assistive tech reads out." },
   }}
 />
 
-`CardCarousel.Track` also takes `flickVelocity` (px/s, default 500) and `elastic` (share of the finger's travel past the ends, default 0.18). The physics functions (`snapTarget`, `rubberBand`, `stepSpring`) are exported as pure functions.
+Renders a `<div>` with `data-dragging`, `data-effect`, `data-dir` and the root variables.
 
-## Slides and clicks
+### Viewport
 
-- A click on a card that isn't current makes it current (`selectOnClick`).
-- The click that ends a drag is swallowed, so a swipe never presses a button on a card.
-- `data-active` marks the current slide. The others are `aria-hidden`, so take any buttons inside them out of the tab order.
+The region: `role="region"`, `aria-roledescription="carousel"`, `aria-label` from `labels.carousel` and `tabIndex={0}`, all overridable. Renders a `<div>`.
+
+### Track
+
+The surface you drag; it counts and numbers its children. `flickVelocity` and `elastic` still work here, but belong on the root. Renders a `<div>` with `data-dragging`.
+
+### Slide
+
+<TypeTable
+  type={{
+    index: { type: "number", description: "Its place. By default its order among the track's children." },
+    label: { type: "string", description: 'A name read before its place: "Premium, 2 of 4".' },
+    selectOnClick: {
+      type: "boolean",
+      default: "true",
+      description: "A click on it while it isn't current makes it current.",
+    },
+    children: {
+      type: "ReactNode | (state) => ReactNode",
+      description: "Content, or a function of { index, count, active, offset }.",
+    },
+  }}
+/>
+
+Renders a `<div>` with `data-active`, `data-side`, `data-index` and the slide variables; `inert` while it isn't current.
+
+### Previous and Next
+
+Buttons to the neighbouring slide, labelled from `labels`, disabled (with `data-disabled`) at the ends. Render a `<button>`.
+
+### Indicators and Indicator
+
+`Indicators` renders a `<div role="tablist">`, with one `Indicator` per slide when it has no children. `Indicator` takes `index` (by default its order inside `Indicators`) and renders a `<button>`: a tab inside `Indicators`, with `data-active`.
+
+### Hooks
+
+| Hook                    | Returns                                                                                 |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| `useCardCarousel()`     | `index`, `count`, `setIndex`, `dir`, `labels`: re-renders on a change of index or count |
+| `useCarouselSlide()`    | The enclosing slide's `index`, `count`, `active`, `offset`                              |
+| `useCarouselPosition()` | `{ get, subscribe }` for the fractional position, every frame                           |
+| `useCarouselDragging()` | Whether the track is being dragged                                                      |
+
+## Migrating from 0.2
+
+- The carousel now lays slides out itself. If you wrote the transforms in CSS, add `effect="none"` to keep yours, or delete them.
+- Slides no longer need `index`, and the viewport no longer needs `aria-label` or `tabIndex`.
+- Slides out of focus are `inert`: remove any `tabIndex={-1}` you put on their buttons.
+- `flickVelocity` and `elastic` move to the root; the track still takes them for now.
+- Wrap indicators in `CardCarousel.Indicators` to make them tabs.
+- A slide's React children can be a function of its state, which replaces a component calling `useCardCarousel()` to compare indices.

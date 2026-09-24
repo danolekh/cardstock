@@ -5,9 +5,10 @@
   "sideEffects": false,
   "scripts": {
     "dev": "vite dev",
-    "build": "pnpm registry:build && vite build",
+    "build": "pnpm backgrounds:manifest && pnpm registry:build && vite build",
     "registry:build": "shadcn build --output public/r",
     "backgrounds": "node scripts/backgrounds.ts",
+    "backgrounds:manifest": "node scripts/manifest.ts",
     "preview": "vite preview",
     "check-types": "tsc --noEmit",
     "deploy": "wrangler deploy"

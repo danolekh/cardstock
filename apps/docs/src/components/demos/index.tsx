@@ -20,8 +20,8 @@ const demo = <M,>(
 
 export const demos = {
   playground: demo(
-    () => import("../../../registry/cardstock/card-playground"),
-    (m) => m.CardPlayground,
+    () => import("./playground-demo"),
+    (m) => m.PlaygroundDemo,
     () => import("../../../registry/cardstock/card-playground.tsx?raw"),
     "card-playground.tsx",
   ),
@@ -42,6 +42,12 @@ export const demos = {
     (m) => m.MotionCard,
     () => import("./motion-card.tsx?raw"),
     "motion-card.tsx",
+  ),
+  flip: demo(
+    () => import("./flip-demo"),
+    (m) => m.FlipDemo,
+    () => import("./flip-demo.tsx?raw"),
+    "flip-demo.tsx",
   ),
   swiper: demo(
     () => import("./swiper-demo"),

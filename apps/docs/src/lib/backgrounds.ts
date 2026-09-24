@@ -1,11 +1,12 @@
 import type { CardBackground, ImageBackground } from "@danolekh/cardstock";
 
-/* cardstock's backgrounds, as data. Each one is a plain `CardBackground` you can pass to
- * `Card.Root`, store (as JSON, or by its key), or copy and change. The images are original
- * artwork hosted at cardstock.danolekh.com with CORS, so the frost can draw them; download them to
- * serve them yourself. */
+/* The docs' own set of backgrounds: the four gradients and the house artwork in public/backgrounds.
+ * It's the one source for the demos, the promo stage and the manifest the
+ * `@danolekh/cardstock-backgrounds` CLI downloads from (scripts/manifest.ts). Apps don't import
+ * this: they run `npx @danolekh/cardstock-backgrounds add …` and get their own copy. */
 
-const HOST = "https://cardstock.danolekh.com/backgrounds";
+// Served by this site, so the frost can draw them without CORS.
+const HOST = "/backgrounds";
 
 const art = (name: string, rest: Omit<ImageBackground, "type" | "src" | "srcSet"> & { label: string }) =>
   ({
@@ -76,3 +77,10 @@ export const BACKGROUNDS = {
 } as const satisfies Record<string, CardBackground & { label: string }>;
 
 export type BackgroundName = keyof typeof BACKGROUNDS;
+
+/** The playground's mix: gradients and artwork, in the order they swipe. */
+export const PLAYGROUND_BACKGROUNDS = Object.fromEntries(
+  (["ink", "holo", "guilloche", "paper", "aurora", "topo", "ember", "guilloche-sand"] as const).map(
+    (name) => [name, BACKGROUNDS[name]],
+  ),
+) as Record<string, CardBackground & { label: string }>;

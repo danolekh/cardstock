@@ -17,10 +17,10 @@ The design follows [Base UI](https://base-ui.com): parts on a namespace (`Card.R
 
 ## What's in it
 
-| Import                         | Parts                                                                                                                                                                                                      |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@danolekh/cardstock`          | `Card.Root`, `Tilt`, `Body`, `Front`, `Back`, `FlipTrigger`, `RevealTrigger`, `FreezeTrigger`, `Number`, `SecurityCode`, `Holder`, `Expiry`, `FrozenOverlay`, `Spending`, `SpendingIndicator`, `useCard()` |
-| `@danolekh/cardstock/carousel` | `CardCarousel.Root`, `Viewport`, `Track`, `Slide`, `Previous`, `Next`, `Indicator`, `useCardCarousel()`                                                                                                    |
-| `@danolekh/cardstock/frost`    | `Frost`: the WebGL2 frost for a frozen card                                                                                                                                                                |
+| Import                         | Parts                                                                                                                                                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@danolekh/cardstock`          | `Card.Root`, `Tilt`, `TiltSurface`, `Body`, `Front`, `Back`, `FlipTrigger`, `RevealTrigger`, `FreezeTrigger`, `Number`, `SecurityCode`, `Holder`, `Expiry`, `FrozenOverlay`, `Spending`, `SpendingIndicator`, `useCard()` |
+| `@danolekh/cardstock/carousel` | `CardCarousel.Root`, `Viewport`, `Track`, `Slide`, `Previous`, `Next`, `Indicators`, `Indicator`, `useCardCarousel()`, `useCarouselSlide()`                                                                               |
+| `@danolekh/cardstock/frost`    | `Frost`: the WebGL2 frost for a frozen card; `FrostVeil`: the same without WebGL                                                                                                                                          |
 
 The library ships no CSS and has no animation dependency. Its only runtime dependency is `@base-ui/react`, which it shares with your app.

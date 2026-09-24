@@ -9,6 +9,7 @@ function Body({ children }: { children: React.ReactNode }) {
   const { flipped } = useCard();
   return (
     <Card.Body
+      effect="none"
       render={
         <motion.div
           initial={false}

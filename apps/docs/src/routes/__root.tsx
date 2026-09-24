@@ -31,6 +31,21 @@ export const Route = createRootRoute({
         content:
           "Headless, composable card primitives for React: flip, tilt, a masked number that decodes, freeze with frost, a spending meter and a swipeable card carousel.",
       },
+      // The link preview (public/og.png, 1200×630).
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "cardstock" },
+      { property: "og:title", content: "cardstock: headless bank-card primitives for React" },
+      {
+        property: "og:description",
+        content:
+          "Flip, tilt, a number that decodes, freeze with WebGL frost, a spending meter and a swipeable carousel.",
+      },
+      { property: "og:url", content: "https://cardstock.danolekh.com" },
+      { property: "og:image", content: "https://cardstock.danolekh.com/og.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://cardstock.danolekh.com/og.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
