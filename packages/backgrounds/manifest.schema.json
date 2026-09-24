@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cardstock.danolekh.com/backgrounds/manifest.schema.json",
+  "title": "cardstock backgrounds manifest",
+  "description": "The card backgrounds a host offers to @danolekh/cardstock-backgrounds: each preset's background as data (without image URLs, which depend on where the app serves the files) and every file with its size and SHA-256.",
+  "type": "object",
+  "required": ["version", "base", "license", "presets"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "base": {
+      "description": "Where the files live: an absolute URL, or one relative to the manifest.",
+      "type": "string",
+      "format": "uri-reference"
+    },
+    "license": {
+      "description": "The artwork's licence, as an SPDX identifier.",
+      "type": "string",
+      "minLength": 1
+    },
+    "presets": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+      "additionalProperties": { "$ref": "#/$defs/preset" }
+    }
+  },
+  "$defs": {
+    "color": {
+      "description": "A plain CSS colour: hex, a colour function of numbers, or a keyword.",
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(?:#[0-9a-fA-F]{3,8}|(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\\([\\w\\s.,%+\\-/]*\\)|[a-zA-Z]+)$"
+    },
+    "stops": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 8,
+      "items": {
+        "type": "array",
+        "prefixItems": [{ "$ref": "#/$defs/color" }, { "type": "number", "minimum": 0, "maximum": 1 }],
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "background": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "color"],
+          "properties": {
+            "type": { "const": "image" },
+            "color": { "$ref": "#/$defs/color" },
+            "position": { "type": "string", "pattern": "^[a-zA-Z0-9\\s.%-]{1,40}$" },
+            "credit": { "type": "string", "maxLength": 200 },
+            "tone": { "enum": ["light", "dark"] },
+            "ink": { "$ref": "#/$defs/color" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "color"],
+          "properties": {
+            "type": { "const": "solid" },
+            "color": { "$ref": "#/$defs/color" },
+            "tone": { "enum": ["light", "dark"] },
+            "ink": { "$ref": "#/$defs/color" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "stops"],
+          "properties": {
+            "type": { "const": "linear" },
+            "stops": { "$ref": "#/$defs/stops" },
+            "angle": { "type": "number" },
+            "tone": { "enum": ["light", "dark"] },
+            "ink": { "$ref": "#/$defs/color" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "stops"],
+          "properties": {
+            "type": { "const": "radial" },
+            "stops": { "$ref": "#/$defs/stops" },
+            "at": {
+              "type": "array",
+              "items": { "type": "number", "minimum": 0, "maximum": 1 },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "tone": { "enum": ["light", "dark"] },
+            "ink": { "$ref": "#/$defs/color" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "file": {
+      "type": "object",
+      "required": ["file", "width", "height", "bytes", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "description": "A bare file name, relative to base.",
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}\\.(?:webp|avif|png|jpe?g)$"
+        },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "preset": {
+      "type": "object",
+      "required": ["label", "tags", "background", "files"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,31}$" }
+        },
+        "background": { "$ref": "#/$defs/background" },
+        "files": {
+          "description": "The image at each width; empty for a solid or a gradient.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/file" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,325 @@
+{
+  "version": 1,
+  "base": "https://cardstock.danolekh.com/backgrounds/",
+  "license": "MIT",
+  "presets": {
+    "ink": {
+      "label": "Ink",
+      "tags": ["gradient", "dark"],
+      "background": {
+        "type": "linear",
+        "stops": [
+          ["#34322d", 0],
+          ["#171614", 0.55],
+          ["#080807", 1]
+        ],
+        "ink": "#f1dfa6"
+      },
+      "files": []
+    },
+    "paper": {
+      "label": "Paper",
+      "tags": ["gradient", "light"],
+      "background": {
+        "type": "linear",
+        "stops": [
+          ["#fbf8f1", 0],
+          ["#efe8d8", 0.6],
+          ["#e2d8c3", 1]
+        ],
+        "ink": "#1c1a17"
+      },
+      "files": []
+    },
+    "sage": {
+      "label": "Sage",
+      "tags": ["gradient", "dark"],
+      "background": {
+        "type": "linear",
+        "stops": [
+          ["#7f9b84", 0],
+          ["#566f5b", 0.55],
+          ["#3a4d3f", 1]
+        ],
+        "ink": "#f4f1e8",
+        "tone": "dark"
+      },
+      "files": []
+    },
+    "ember": {
+      "label": "Ember",
+      "tags": ["gradient", "dark"],
+      "background": {
+        "type": "linear",
+        "stops": [
+          ["#ff8a5c", 0],
+          ["#e0512b", 0.5],
+          ["#a8321a", 1]
+        ],
+        "ink": "#fff6ee",
+        "tone": "dark"
+      },
+      "files": []
+    },
+    "guilloche": {
+      "label": "Guilloché",
+      "tags": ["pattern", "engraved", "dark"],
+      "background": {
+        "type": "image",
+        "color": "#10151d",
+        "tone": "dark",
+        "ink": "#f1dfa6"
+      },
+      "files": [
+        {
+          "file": "guilloche.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 220896,
+          "sha256": "8a7e2e49cd90b8c2496301b039d6dfa20014cbaa878c1d52bd8cd43fa52de4cb"
+        },
+        {
+          "file": "guilloche-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 55382,
+          "sha256": "93567abd5803af44ec99c853dd1a4384a3dc15ba17ae4dd793be459933de084a"
+        }
+      ]
+    },
+    "guilloche-sand": {
+      "label": "Guilloché sand",
+      "tags": ["pattern", "engraved", "light"],
+      "background": {
+        "type": "image",
+        "color": "#e9ddc4",
+        "tone": "light",
+        "ink": "#3b301d"
+      },
+      "files": [
+        {
+          "file": "guilloche-sand.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 150432,
+          "sha256": "2d0d63b6d6b94648b26a2211dd3410d80dccf65cf623f4328e40609cde15497d"
+        },
+        {
+          "file": "guilloche-sand-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 32558,
+          "sha256": "cad0fee5ad8cb759f3ce7851ddd4080810601942a9a0b5342d7027a51f556106"
+        }
+      ]
+    },
+    "holo": {
+      "label": "Holo",
+      "tags": ["foil", "iridescent", "light"],
+      "background": {
+        "type": "image",
+        "color": "#c7b5f4",
+        "tone": "light",
+        "ink": "#231a3d"
+      },
+      "files": [
+        {
+          "file": "holo.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 15264,
+          "sha256": "528ab6aac29dda99781975fe47b701e3a79ec3a12b6180c012333b5d00079900"
+        },
+        {
+          "file": "holo-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 3560,
+          "sha256": "4b802457bce2608d0550f62e09dcfaf334da811f0426648a9c2773f0f8fd5d61"
+        }
+      ]
+    },
+    "aurora": {
+      "label": "Aurora",
+      "tags": ["mesh", "gradient", "dark"],
+      "background": {
+        "type": "image",
+        "color": "#123a7a",
+        "tone": "dark",
+        "ink": "#f2f7ff"
+      },
+      "files": [
+        {
+          "file": "aurora.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 61258,
+          "sha256": "1e497abd769ec64a74b053027ceeec8d59f60205f786f84a26ab0b9086839101"
+        },
+        {
+          "file": "aurora-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 5094,
+          "sha256": "40ee29da2bc324141ada5c945a661fa87f1f8c3e6e488fc4a4c6fe5bff0fb762"
+        }
+      ]
+    },
+    "dusk": {
+      "label": "Dusk",
+      "tags": ["mesh", "gradient", "dark"],
+      "background": {
+        "type": "image",
+        "color": "#a83a5e",
+        "tone": "dark",
+        "ink": "#fff4ec"
+      },
+      "files": [
+        {
+          "file": "dusk.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 41774,
+          "sha256": "e6c507284ea486a7584d237e3924ee849eda2a9408d737d9bf1a5f213507e3df"
+        },
+        {
+          "file": "dusk-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 4808,
+          "sha256": "7545a9fec51633f0db136d6d7ede7f77e270b810a9b9f4d5e360a33f40f9b69e"
+        }
+      ]
+    },
+    "topo": {
+      "label": "Topo",
+      "tags": ["pattern", "lines", "dark"],
+      "background": {
+        "type": "image",
+        "color": "#1a2528",
+        "tone": "dark",
+        "ink": "#e4f1ec"
+      },
+      "files": [
+        {
+          "file": "topo.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 107126,
+          "sha256": "90f970a6da01353a8aeb743a0b789111719a7d48786a62164c21c6d96912235b"
+        },
+        {
+          "file": "topo-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 38158,
+          "sha256": "002965a96bd2acfd06232b8e97e8b8b1313ef910f15fba2eb728339e5c4ee865"
+        }
+      ]
+    },
+    "steel": {
+      "label": "Steel",
+      "tags": ["metal", "brushed", "light"],
+      "background": {
+        "type": "image",
+        "color": "#c9d0d7",
+        "tone": "light",
+        "ink": "#1b2027"
+      },
+      "files": [
+        {
+          "file": "steel.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 24598,
+          "sha256": "a872b2202258f7388880be3f96a8e4bddba89aca6ba86ec46dbcbcdd9e27a7eb"
+        },
+        {
+          "file": "steel-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 5010,
+          "sha256": "672981144bcd390a51f626596e7480faadb6ed350d9036506e955f09ff2bb2c0"
+        }
+      ]
+    },
+    "linen": {
+      "label": "Linen",
+      "tags": ["paper", "texture", "light"],
+      "background": {
+        "type": "image",
+        "color": "#f1ebdf",
+        "tone": "light",
+        "ink": "#2a241a"
+      },
+      "files": [
+        {
+          "file": "linen.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 65856,
+          "sha256": "33792a5291c8a1b37f7bdbddfe241e6824996049680b03988ed7cc0ff6029f16"
+        },
+        {
+          "file": "linen-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 13250,
+          "sha256": "90f33c9fc908f1a4237389286e94f53fa160296de55c976f6426b3ace050af48"
+        }
+      ]
+    },
+    "tide": {
+      "label": "Tide",
+      "tags": ["pattern", "waves", "dark"],
+      "background": {
+        "type": "image",
+        "color": "#145060",
+        "tone": "dark",
+        "ink": "#effbf8"
+      },
+      "files": [
+        {
+          "file": "tide.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 27560,
+          "sha256": "37632dfb1c4c2705d5f576041a908b129bbb1b1f93faf63f29e2ca86f6c34342"
+        },
+        {
+          "file": "tide-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 4054,
+          "sha256": "d45b99e6500484b0cb3897de8dc1f9310ffaa1944e03c5369f1686b345fdfb87"
+        }
+      ]
+    },
+    "noir": {
+      "label": "Noir",
+      "tags": ["pattern", "grid", "dark"],
+      "background": {
+        "type": "image",
+        "color": "#111218",
+        "tone": "dark",
+        "ink": "#e8e9f0"
+      },
+      "files": [
+        {
+          "file": "noir.webp",
+          "width": 1720,
+          "height": 1080,
+          "bytes": 12200,
+          "sha256": "76649c8b1083bc334cc980295e36c797527f37e09b93e1b7383167d492b72c98"
+        },
+        {
+          "file": "noir-860.webp",
+          "width": 860,
+          "height": 540,
+          "bytes": 3034,
+          "sha256": "eecd3b64df0baa0c796d72a9d611263f402500d28f25b0d9210a36e735e1ba5d"
+        }
+      ]
+    }
+  }
+}
