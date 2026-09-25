@@ -1,6 +1,6 @@
 /* Cuts a recorded master (out/<take>[-<theme>].mp4) down for the web.
  *
- *   pnpm --filter promo encode <master.mp4> <name> --out <dir> [--cover <dir>]
+ *   pnpm --filter promo encode <master.mp4> <name> --out <dir> [--cover <dir>] [--x]
  *
  * Writes into --out:
  *   <name>-1600.mp4          1600×900, for a hero
@@ -8,8 +8,10 @@
  *   <name>-poster.webp       frame 0 (the loop's start), 1600 wide, so the poster and the video's
  *   <name>-poster-800.webp   first frame match; and an 800 wide cut
  * and with --cover, the posters again as <dir>/<name>.webp and <name>-800.webp, the project-cover
- * naming on danolekh.com. H.264 High in yuv420p with the index up front, no audio: it plays inline
- * and muted everywhere. */
+ * naming on danolekh.com; and with --x, <name>-x.mp4 for a post on X: the full 1920×1080 at 60fps,
+ * at a higher quality than the web cuts (X re-encodes whatever it gets, so it should get a lot to
+ * work from), well inside its 512 MB and 2:20 limits. H.264 High in yuv420p with the index up
+ * front, no audio: it plays inline and muted everywhere. */
 import { execFileSync } from "node:child_process";
 import { mkdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -24,7 +26,7 @@ const flag = (name: string) => {
 const [master, name] = args.filter((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--"));
 const out = flag("out");
 if (!master || !name || !out)
-  throw new Error("usage: encode <master.mp4> <name> --out <dir> [--cover <dir>]");
+  throw new Error("usage: encode <master.mp4> <name> --out <dir> [--cover <dir>] [--x]");
 mkdirSync(out, { recursive: true });
 
 const mb = (file: string) => `${(statSync(file).size / 1e6).toFixed(1)} MB`;
@@ -38,6 +40,18 @@ for (const [width, crf] of [
     ...["-y", "-loglevel", "error", "-i", master, "-an"],
     ...["-vf", `scale=${width}:-2:flags=lanczos,format=yuv420p`],
     ...["-c:v", "libx264", "-preset", "slow", "-crf", String(crf), "-profile:v", "high"],
+    ...["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"],
+    ...["-movflags", "+faststart", file],
+  ]);
+  console.log(`${file}  ${mb(file)}`);
+}
+
+if (args.includes("--x")) {
+  const file = join(out, `${name}-x.mp4`);
+  execFileSync("ffmpeg", [
+    ...["-y", "-loglevel", "error", "-i", master, "-an"],
+    ...["-vf", "scale=1920:1080:flags=lanczos,fps=60,format=yuv420p"],
+    ...["-c:v", "libx264", "-preset", "slow", "-crf", "18", "-profile:v", "high", "-level", "4.2"],
     ...["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"],
     ...["-movflags", "+faststart", file],
   ]);

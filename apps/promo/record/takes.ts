@@ -161,11 +161,110 @@ function ownShader([cx, cy]: Point, view: TakeDef["view"]): Take {
   return take;
 }
 
+/** The Raiffeisen showcase (`?scene=raiffeisen`): the whole library in about forty seconds, one
+ * beat per caption. Swipe through the six tiers to the premium moiré and tilt it, flip it and back
+ * (the shader never stops), decode the details, swipe back to Gold and freeze it (the ribbons keep
+ * rising under the frost), drag the limit, type in a brand shader, and close on the wordmark. */
+async function showcase(page: Page, view: TakeDef["view"]): Promise<Take> {
+  const [cx, cy] = await center(page, "[data-slot=carousel-viewport]");
+  const freeze = await center(page, "[data-stage=freeze]");
+  const flip = await center(page, "[data-stage=flip]");
+  const reveal = await center(page, "[data-stage=reveal]");
+  const scrub = await center(page, '[data-stage=limit] [title="Drag sideways to change"]');
+  // Far enough out that no edge of the cursor's ring shows.
+  const off: Point = [view.width + 60, view.height - 40];
+  const take = new Take(off).wait(300);
+  const caption = (text: string | null) => (p: Page) =>
+    p.evaluate((t) => (window as any).__stage.caption(t), text);
+  const stage = (name: "byo" | "end") => (p: Page) => p.evaluate((n) => (window as any).__stage[n](), name);
+  const swipe = (dx: number, settle: number) =>
+    take
+      .move(cx + (dx < 0 ? 90 : -90), cy, 320)
+      .wait(60)
+      .drag(dx, 240)
+      .wait(settle);
+
+  // 1. Six tiers, each a live shader: quiet yellow up to the premium moiré.
+  take.do(caption("Six cards, six live shaders, one GPU context")).wait(900);
+  for (let i = 0; i < 5; i++) swipe(-170, i === 4 ? 500 : 820);
+  // 2. The light follows the tilt.
+  take.do(caption("Tilt, glare, and a shader that follows the light"));
+  take.move(cx + 140, cy + 40, 600).loop(cx, cy, 150, 70, 3200);
+  // 3. The flip, and the shader runs straight through it.
+  take.do(caption("Flip it: the shader never stops"));
+  take
+    .move(...flip, 600)
+    .wait(120)
+    .click()
+    .wait(1400)
+    .click()
+    .wait(1000);
+  // 4. The details decode digit by digit.
+  take.do(caption("Details decode, digit by digit"));
+  take
+    .move(...reveal, 450)
+    .wait(120)
+    .click()
+    .wait(1700)
+    .click()
+    .wait(700);
+  // 5. Back to Gold and freeze it: the frost lays over the running ribbons.
+  take.do(caption(null));
+  for (let i = 0; i < 4; i++)
+    take
+      .move(cx - 100, cy, i ? 170 : 380)
+      .wait(30)
+      .drag(200, 150, linear)
+      .wait(i === 3 ? 700 : 110);
+  take.do(caption("Freeze: the frost lays over a running shader"));
+  take
+    .move(...freeze, 600)
+    .wait(120)
+    .click()
+    .wait(1300);
+  take.move(cx + 120, cy + 40, 600).loop(cx, cy, 130, 60, 2600);
+  take
+    .move(...freeze, 600)
+    .wait(120)
+    .click()
+    .wait(900);
+  // 6. Spending against a limit you drag.
+  take.do(caption("Spending, against a limit you drag"));
+  // Three px a step, €50 a step: up to about €1,800, then back a little.
+  take
+    .move(...scrub, 600)
+    .wait(150)
+    .drag(40, 1200)
+    .wait(300)
+    .drag(-12, 600)
+    .wait(1000);
+  // 7. The brand's own shader, typed in.
+  take.do(caption("Your brand’s own GLSL, in one line"));
+  take.move(off[0], off[1], 700).do(stage("byo")).wait(1700);
+  take.move(cx + 120, cy + 40, 700).loop(cx, cy, 140, 65, 3000);
+  // 8. The wordmark.
+  take
+    .do(caption(null))
+    .move(off[0], cy + 120, 600)
+    .wait(200)
+    .do(stage("end"))
+    .wait(3200);
+  return take;
+}
+
 const DEMO = '[data-demo="raiffeisen-card"]';
 
 const SHADER_CARDS = ["holo-foil", "silk", "singularity", "mesh", "liquid-metal"];
 
 export const takes: Record<string, TakeDef> = {
+  // The library, on cards in Raiffeisen's style, for the pitch: stage/raiffeisen.
+  "raiffeisen-library": {
+    url: "http://localhost:4173/?scene=raiffeisen",
+    view: { width: 800, height: 450 },
+    ready: "html[data-ready]",
+    accent: "#fbf315",
+    script: showcase,
+  },
   // cardstock 0.4 on the stage: shader backgrounds, the new flips, the 2D coverflow.
   v04: {
     url: `http://localhost:4173/?cards=${SHADER_CARDS.join(",")}`,
