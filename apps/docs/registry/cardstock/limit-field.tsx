@@ -45,7 +45,7 @@ export function LimitField({
     >
       <Limit.ScrubArea
         pixelSensitivity={3}
-        className="text-fd-muted-foreground cursor-ew-resize text-sm select-none"
+        className="text-muted-foreground cursor-ew-resize text-sm select-none"
         title="Drag sideways to change"
       >
         <Limit.Label className="cursor-ew-resize">
@@ -55,12 +55,12 @@ export function LimitField({
           <ScrubIcon />
         </Limit.ScrubAreaCursor>
       </Limit.ScrubArea>
-      <Limit.Group className="border-fd-border flex items-center rounded-lg border">
-        <Limit.Decrement className="text-fd-muted-foreground hover:text-fd-foreground px-2.5 py-1">
+      <Limit.Group className="border-border flex items-center rounded-lg border">
+        <Limit.Decrement className="text-muted-foreground hover:text-foreground px-2.5 py-1">
           −
         </Limit.Decrement>
-        <Limit.Input className="border-fd-border focus:bg-fd-accent/40 w-24 border-x bg-transparent py-1 text-center text-sm tabular-nums outline-none" />
-        <Limit.Increment className="text-fd-muted-foreground hover:text-fd-foreground px-2.5 py-1">
+        <Limit.Input className="border-border focus:bg-accent/40 w-24 border-x bg-transparent py-1 text-center text-sm tabular-nums outline-none" />
+        <Limit.Increment className="text-muted-foreground hover:text-foreground px-2.5 py-1">
           +
         </Limit.Increment>
       </Limit.Group>

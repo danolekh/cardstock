@@ -28,7 +28,7 @@ export function CardSwiper({
 }: CardSwiperProps): React.ReactElement {
   return (
     <CardCarousel.Root {...root} count={labels.length} className={`w-full ${className ?? ""}`}>
-      <CardCarousel.Viewport className="focus-visible:ring-fd-ring mx-auto w-full max-w-[380px] rounded-2xl outline-none focus-visible:ring-2">
+      <CardCarousel.Viewport className="focus-visible:ring-ring mx-auto w-full max-w-[380px] rounded-2xl outline-none focus-visible:ring-2">
         <CardCarousel.Track>
           {labels.map((label) => (
             <CardCarousel.Slide key={label} label={label}>
@@ -42,7 +42,7 @@ export function CardSwiper({
           {labels.map((label) => (
             <CardCarousel.Indicator
               key={label}
-              className="border-fd-border hover:text-fd-foreground data-active:border-fd-foreground data-active:bg-fd-foreground data-active:text-fd-background focus-visible:ring-fd-ring rounded-full border px-3 py-1 text-sm transition-colors outline-none focus-visible:ring-2"
+              className="border-border hover:text-foreground data-active:border-foreground data-active:bg-foreground data-active:text-background focus-visible:ring-ring rounded-full border px-3 py-1 text-sm transition-colors outline-none focus-visible:ring-2"
             >
               {label}
             </CardCarousel.Indicator>

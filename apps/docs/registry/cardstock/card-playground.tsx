@@ -46,7 +46,7 @@ export function CardPlayground({ backgrounds = DESIGNS }: { backgrounds?: Backgr
     });
 
   return (
-    <div className="not-prose border-fd-border bg-fd-card text-fd-card-foreground w-full overflow-hidden rounded-2xl border">
+    <div className="not-prose border-border bg-card text-card-foreground w-full overflow-hidden rounded-2xl border">
       <div className="px-6 py-10">
         <CardSwiper index={index} onIndexChange={choose} labels={keys.map((k) => backgrounds[k]!.label)}>
           {(i, active) => {
@@ -69,7 +69,7 @@ export function CardPlayground({ backgrounds = DESIGNS }: { backgrounds?: Backgr
           }}
         </CardSwiper>
         <p
-          className="text-fd-muted-foreground mx-auto mt-4 flex max-w-[380px] justify-between text-sm"
+          className="text-muted-foreground mx-auto mt-4 flex max-w-[380px] justify-between text-sm"
           aria-live="polite"
         >
           {/* Both labels sit in one grid cell, so the swap never changes the line's size. */}
@@ -86,14 +86,14 @@ export function CardPlayground({ backgrounds = DESIGNS }: { backgrounds?: Backgr
           </span>
         </p>
       </div>
-      <div className="border-fd-border space-y-4 border-t border-dashed p-5">
-        <div className="text-fd-muted-foreground flex items-center justify-between gap-3 text-sm">
+      <div className="border-border space-y-4 border-t border-dashed p-5">
+        <div className="text-muted-foreground flex items-center justify-between gap-3 text-sm">
           <span id="playground-freeze">Freeze card</span>
           <Switch.Root
             aria-labelledby="playground-freeze"
             checked={isFrozen}
             onCheckedChange={freeze}
-            className="border-fd-border bg-fd-muted data-checked:bg-fd-primary relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border p-0.5 transition-colors data-checked:border-transparent"
+            className="border-border bg-muted data-checked:bg-primary relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border p-0.5 transition-colors data-checked:border-transparent"
           >
             <Switch.Thumb className="size-[18px] rounded-full bg-white shadow transition-transform duration-200 data-checked:translate-x-5" />
           </Switch.Root>
@@ -120,7 +120,7 @@ function Button(props: React.ComponentProps<"button">) {
     <button
       type="button"
       {...props}
-      className="border-fd-border hover:bg-fd-accent rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+      className="border-border hover:bg-accent rounded-lg border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
     />
   );
 }
