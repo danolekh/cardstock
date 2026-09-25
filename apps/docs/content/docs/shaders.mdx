@@ -1,6 +1,6 @@
 ---
 title: Shaders
-description: Live GLSL backgrounds that pause when nobody's looking, stop as the card freezes, and share one GPU context.
+description: Live GLSL backgrounds that pause when nobody's looking, keep moving under the frost, and share one GPU context.
 ---
 
 <ComponentPreview name="shaders" />
@@ -88,7 +88,7 @@ Otherwise the shader holds its last frame and costs nothing. With reduced motion
 
 ## One context for every card
 
-Browsers keep only about sixteen WebGL contexts alive per page, so a context per card fails as soon as a carousel fills up. Every `<Shader />` on the page shares one WebGL2 context and one animation frame. Each card's frame is drawn at the card's size and handed to its own canvas: a zero-copy `transferToImageBitmap` where `OffscreenCanvas` has WebGL2, and a copy on older Safari.
+Browsers keep only about sixteen WebGL contexts alive per page, so a context per card fails as soon as a carousel fills up. Every `<Shader />` on the page shares one WebGL2 context and one animation frame. Each card's frame is drawn into the corner of one shared canvas and copied into the card's own canvas. The shared canvas grows to fit the largest card and never resizes from one card to the next, because resizing it makes the GPU reallocate its buffer. A card next to a row of small swatches would otherwise stall the page.
 
 The loop draws a card only when something it shows has changed: its clock, the pointer, the flip, the freeze, or its size. The loop stops altogether when nothing needs a frame. If frames keep arriving late, it draws fewer pixels and earns them back after a few seconds of smooth frames. If the GPU drops the context, the loop rebuilds it once. If the context drops again within ten seconds, every card settles on its poster.
 
@@ -96,7 +96,7 @@ The loop draws a card only when something it shows has changed: its clock, the p
 
 Every shader gets these uniforms: `uTime`, `uResolution`, `uPointer` (0..1 across the card), `uTilt` (−1..1), `uFlip`, `uFreeze` and `uSeed` (0..1, different per card).
 
-- **Freeze.** As the card freezes, time eases to a stop. The built-in shaders also cool and grey toward ice. `<Frost />` snapshots the canvas's current frame, and retakes the snapshot once the shader has stopped.
+- **Freeze.** The frost is a layer, like ice over a screen: the shader keeps running under it. On a face with a `<Shader />`, `<Frost />` holds no WebGL context of its own. It's drawn as a second pass in the shared one, refracting the background's live frame with a snapshot of the card's text over it. `uFreeze` is there if your own shader wants to react to the cold.
 - **Tilt.** Inside `Card.Tilt`, `uPointer` follows the pointer, eased the way the tilt surface is. `holo-foil` and `liquid-metal` use it to move their light.
 - **Flip.** `uFlip` is the card's flip progress.
 

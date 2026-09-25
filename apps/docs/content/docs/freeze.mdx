@@ -51,6 +51,8 @@ import { Frost } from "@danolekh/cardstock/frost";
 
 The face turns to frosted glass from the middle out, following the freeze progress (750ms by default). If you unfreeze halfway, it walks back through the same frames. It is a port of "Spreading Frost" (shadertoy XddcRr). A shader can't read the DOM, so `Frost` redraws the face into a canvas from a clone and refracts that.
 
+Over a [shader background](/docs/shaders), the frost is a layer and the background keeps moving under the ice. `Frost` then draws in the shaders' shared WebGL context instead of its own, and refracts the background's live frame, with only the card's content (its text, chip and number) taken from the snapshot.
+
 <TypeTable
   type={{
     stops: {
