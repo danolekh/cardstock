@@ -88,7 +88,6 @@ void main() {
   float fade = mix(1., .35, smoothstep(0., 1100., rho));
   vec3 ground = uGround * (1. + .5 * (1. - smoothstep(0., 1400., length(q - vec2(width * .3, 270.)))));
   vec3 color = mix(ground, uInk, ink * fade);
-  color = mix(color, vec3(dot(color, vec3(.3, .59, .11))) * vec3(.85, .95, 1.1), .5 * uFreeze);
   fragColor = vec4(color, 1.);
 }
 `,

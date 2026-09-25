@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { Backend, FrameInput } from "./backend";
+import type { Backend, FrameInput, OverlayInput } from "./backend";
 import { defineShader } from "./define";
 import { createScheduler, type SurfaceOptions, type SurfaceStatus } from "./scheduler";
 
 const def = defineShader({ id: "test/s", label: "S", source: "void main() {}", still: 2 });
 
-function setup(opts: { backend?: () => Backend | null } = {}) {
-  const draws: { def: string; input: FrameInput }[] = [];
+function setup(opts: { backend?: () => Backend | null; overlay?: () => "ready" | "pending" } = {}) {
+  const draws: { def: string; input: FrameInput; overlay?: OverlayInput }[] = [];
+  const clears: HTMLCanvasElement[] = [];
   const lost = new Set<() => void>();
   let isLost = false;
   let backends = 0;
@@ -15,10 +16,9 @@ function setup(opts: { backend?: () => Backend | null } = {}) {
     backends++;
     isLost = false;
     return {
-      present: "2d",
       prepare: () => "ready",
-      draw: (d, input) => (draws.push({ def: d.id, input }), true),
-      grab: () => null,
+      prepareOverlay: () => opts.overlay?.() ?? "ready",
+      draw: (d, input, _target, overlay) => (draws.push({ def: d.id, input, overlay }), true),
       onLost: (l) => lost.add(l),
       get lost() {
         return isLost;
@@ -54,7 +54,7 @@ function setup(opts: { backend?: () => Backend | null } = {}) {
     const canvas = document.createElement("canvas");
     Object.defineProperty(canvas, "clientWidth", { value: 200 });
     Object.defineProperty(canvas, "clientHeight", { value: 126 });
-    canvas.getContext = (() => ({})) as never;
+    canvas.getContext = (() => ({ canvas })) as never;
     const statuses: SurfaceStatus[] = [];
     const handle = scheduler.add(
       canvas,
@@ -65,11 +65,19 @@ function setup(opts: { backend?: () => Backend | null } = {}) {
     intersect.forEach((f) => f(canvas, true));
     return { canvas, handle, statuses };
   };
+  /** A canvas for an overlay, whose clears are recorded. */
+  const overlayCanvas = () => {
+    const canvas = document.createElement("canvas");
+    canvas.getContext = (() => ({ canvas, clearRect: () => clears.push(canvas) })) as never;
+    return canvas;
+  };
   return {
     scheduler,
     draws,
+    clears,
     run,
     add,
+    overlayCanvas,
     frames: () => frames.length,
     backends: () => backends,
     lose: () => ((isLost = true), lost.forEach((l) => l())),
@@ -138,17 +146,60 @@ describe("the shader scheduler", () => {
     expect(t.draws.length).toBeGreaterThan(drawn);
   });
 
-  it("slows to a stop as the card freezes, and stops drawing once frozen", () => {
+  it("keeps running while the card is frozen", () => {
     const t = setup();
-    let freeze = 0;
-    t.add({}, () => freeze);
-    t.run(16, 3);
-    freeze = 1;
-    t.run(16, 3);
-    const frozenAt = t.draws.at(-1)!.input.time;
+    const { statuses } = t.add({}, () => 1);
     t.run(16, 5);
-    expect(t.draws.at(-1)!.input.time).toBe(frozenAt);
-    expect(t.frames()).toBe(0);
+    expect(t.draws.at(-1)!.input.time).toBeGreaterThan(t.draws[0]!.input.time);
+    expect(t.frames()).toBe(1);
+    expect(statuses.at(-1)).toMatchObject({ playing: true });
+  });
+
+  it("draws an overlay from the same frames only while its progress is above 0", () => {
+    const t = setup();
+    let progress = 0;
+    const { handle } = t.add({ state: "hold" });
+    const canvas = t.overlayCanvas();
+    const onDraw = vi.fn<() => void>();
+    const overlay = handle.attachOverlay(canvas, { source: "frost", progress: () => progress, onDraw });
+    t.run();
+    expect(t.draws.at(-1)!.overlay).toBeUndefined();
+    expect(t.clears).toEqual([canvas]);
+
+    progress = 0.5;
+    handle.wake();
+    t.run();
+    expect(t.draws.at(-1)!.overlay).toMatchObject({ source: "frost", progress: 0.5, contentVersion: 0 });
+    expect(onDraw).toHaveBeenCalledTimes(1);
+
+    // New content is uploaded with a new version, and redrawn even though nothing else changed.
+    const content = document.createElement("canvas");
+    overlay.setContent(content);
+    t.run();
+    expect(t.draws.at(-1)!.overlay).toMatchObject({ content, contentVersion: 1 });
+
+    progress = 0;
+    handle.wake();
+    t.run();
+    expect(t.clears).toEqual([canvas, canvas]);
+    overlay.remove();
+    progress = 1;
+    handle.wake();
+    t.run();
+    expect(t.draws.at(-1)!.overlay).toBeUndefined();
+  });
+
+  it("keeps drawing the surface alone while the overlay compiles", () => {
+    let state: "ready" | "pending" = "pending";
+    const t = setup({ overlay: () => state });
+    const { handle } = t.add({ state: "hold" });
+    handle.attachOverlay(t.overlayCanvas(), { source: "frost", progress: () => 1 });
+    t.run(16, 2);
+    expect(t.draws.at(-1)!.overlay).toBeUndefined();
+    expect(t.frames()).toBe(1);
+    state = "ready";
+    t.run();
+    expect(t.draws.at(-1)!.overlay).toMatchObject({ progress: 1 });
   });
 
   it("rebuilds after a lost context, and gives up on a second loss soon after", () => {
@@ -184,10 +235,9 @@ describe("the shader scheduler", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const t = setup({
       backend: () => ({
-        present: "2d",
         prepare: () => new Error("nope"),
+        prepareOverlay: () => "ready",
         draw: () => false,
-        grab: () => null,
         onLost() {},
         lost: false,
         dispose() {},

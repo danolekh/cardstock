@@ -11,7 +11,7 @@ export {
 } from "./define";
 export { composeFragment, ShaderSourceError } from "./compose";
 export { resolveParams, type ResolvedUniform } from "./params";
-export { playState, freezeRate, type ShaderPlay, type PlayState } from "./policy";
+export { playState, type ShaderPlay, type PlayState } from "./policy";
 export { SHADER_PRESETS, loadShaderPreset } from "./presets";
 export {
   shaderBackground,

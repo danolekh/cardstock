@@ -71,7 +71,6 @@ void main() {
   color += spec * .45 * mix(vec3(1.), ramp(1.), .4);
   // A soft vignette keeps the edges for the card's text.
   color *= 1. - .22 * dot(uv * vec2(.55, .8), uv * vec2(.55, .8));
-  color = mix(color, vec3(dot(color, vec3(.3, .59, .11))) * vec3(.85, .95, 1.1), .5 * uFreeze);
   fragColor = vec4(clamp(color, 0., 1.), 1.);
 }
 `,

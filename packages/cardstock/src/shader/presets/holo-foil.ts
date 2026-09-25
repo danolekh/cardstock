@@ -64,7 +64,6 @@ void main() {
   float glint = pow(max(0., sin(flake * 40. + facing * 18.)), 24.) * step(.9, flake);
   color += glint * .45 * uIntensity;
 
-  color = mix(color, vec3(dot(color, vec3(.3, .59, .11))) * vec3(.85, .95, 1.1), .5 * uFreeze);
   fragColor = vec4(clamp(color, 0., 1.), 1.);
 }
 `,

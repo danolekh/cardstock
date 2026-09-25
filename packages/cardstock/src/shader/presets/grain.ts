@@ -67,7 +67,6 @@ void main() {
   // Grain in screen pixels, fixed in place: moving grain reads as noise, still grain as paper.
   float g = hash(floor(gl_FragCoord.xy)) - .5;
   color += g * uNoise * .28;
-  color = mix(color, vec3(dot(color, vec3(.3, .59, .11))) * vec3(.85, .95, 1.1), .5 * uFreeze);
   fragColor = vec4(color, 1.);
 }
 `,

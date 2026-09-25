@@ -8,7 +8,6 @@ import { CardContext } from "../card/context";
 import { useFaceSide } from "../card/faces";
 import { useTiltPointer } from "../card/tilt";
 import { SlideContext } from "../carousel/context";
-import { registerLiveCanvas } from "../utils/live-canvas";
 import { usePrefersReducedMotion } from "../utils/media";
 import { type PartProps, usePart } from "../utils/part";
 import { useIsoLayoutEffect } from "../utils/use-iso-layout-effect";
@@ -108,13 +107,16 @@ export function Shader(props: ShaderProps): React.ReactElement | null {
 
   const [status, setStatus] = useState<SurfaceStatus>({ ready: false, playing: false, failed: false });
   const [turning, setTurning] = useState(false);
+  // The Progress objects are stable for the card's life, unlike the context value around them,
+  // which changes with every flip and freeze.
+  const freeze = card?.freeze;
+  const flip = card?.flip;
   useEffect(() => {
-    if (!card) return;
-    const flip = card.flip;
+    if (!flip) return;
     const read = () => setTurning(flip.get() > 0 && flip.get() < 1);
     read();
     return flip.subscribe(read);
-  }, [card]);
+  }, [flip]);
 
   const state = playState({
     play,
@@ -136,13 +138,13 @@ export function Shader(props: ShaderProps): React.ReactElement | null {
     latest.current = { definition: definition ?? null, uniforms, speed, state, maxDpr, maxPixels };
   });
 
-  // Registered once per canvas; what changes later goes through update() below.
+  // Registered once per canvas; what changes later goes through update() below. Registering again
+  // would restart its clock, so this depends only on what lasts as long as the card.
+  const [surface, setSurface] = useState<SurfaceHandle | null>(null);
   useIsoLayoutEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
     const scheduler = pageScheduler();
-    const freeze = card?.freeze;
-    const flip = card?.flip;
     const h = scheduler.add(
       canvas,
       latest.current,
@@ -154,15 +156,15 @@ export function Shader(props: ShaderProps): React.ReactElement | null {
       setStatus,
     );
     handle.current = h;
+    setSurface(h);
     const unsubscribe = [freeze?.subscribe(h.wake), flip?.subscribe(h.wake), pointer?.subscribe(h.wake)];
-    const unregister = registerLiveCanvas(canvas, () => scheduler.grab(canvas));
     return () => {
       unsubscribe.forEach((u) => u?.());
-      unregister();
       h.remove();
       handle.current = null;
+      setSurface(null);
     };
-  }, [card, pointer]);
+  }, [freeze, flip, pointer]);
 
   useIsoLayoutEffect(() => {
     handle.current?.update(latest.current);
@@ -170,6 +172,17 @@ export function Shader(props: ShaderProps): React.ReactElement | null {
 
   const failed = status.failed || missing;
   const shown = status.ready && !failed;
+
+  // Offer the live background to the face's other layers (the frost): pending until the first
+  // frame, gone if it can't draw, so the frost knows to wait, to layer, or to go its own way.
+  const layers = face?.layers;
+  const active = Boolean(bg || given);
+  useEffect(() => {
+    if (!layers || !surface || !active || failed) return;
+    const layer = { ready: shown, attachOverlay: surface.attachOverlay };
+    layers.set(layer);
+    return () => layers.clear(layer);
+  }, [layers, surface, active, failed, shown]);
   const partState: ShaderState = { ready: shown, playing: status.playing && !failed, failed };
   const element = usePart(
     "card-shader",

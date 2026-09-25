@@ -1,10 +1,11 @@
 "use client";
 import type * as React from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { frostBase } from "../background/background";
 import { useCard } from "../card/context";
-import { createFrost, snapshotFace, type Stop } from "./shader";
+import { useFaceSide } from "../card/faces";
+import { createFrost, FROST_LAYER, snapshotFace, type Stop } from "./shader";
 import { FILL, FROST_VEIL, useFreezeOpacity } from "./veil";
 
 export interface FrostProps {
@@ -20,15 +21,28 @@ export interface FrostProps {
 const dpr = () => Math.min(window.devicePixelRatio || 1, 2);
 /** A lost context is rebuilt once; a second loss this soon after means the GPU won't keep one. */
 const LOSS_WINDOW_MS = 10_000;
+const unsubscribed = () => () => {};
 
 /** Frosts the face it sits in as the card freezes, with a WebGL2 shader that refracts a snapshot
  * of the face. Put it inside `Card.Front` or `Card.Back`, after the content it should cover; the
  * face needs `position: relative` and `overflow: hidden`. Each one holds a GPU context while it's
  * mounted, so cards out of focus should use `<FrostVeil />`. Where WebGL2 isn't there, or keeps
- * losing its context, it shows the veil itself. Renders a `<div>` over the face with a canvas. */
+ * losing its context, it shows the veil itself.
+ *
+ * On a face with a live <Shader /> background it holds no context of its own: it's drawn as a
+ * second pass in the shader's shared one, refracting the background's current frame, so the
+ * background keeps moving under the ice. Renders a `<div>` over the face with a canvas. */
 export function Frost(props: FrostProps): React.ReactElement {
   const { stops = [], version = "", className } = props;
   const { freeze, background } = useCard();
+  // A live background on this face: the frost layers over it instead of snapshotting it.
+  const layers = useFaceSide()?.layers;
+  const layer = useSyncExternalStore(
+    layers ? layers.subscribe : unsubscribed,
+    () => layers?.get() ?? null,
+    () => null,
+  );
+  const mode = !layer ? "standalone" : layer.ready ? "layered" : "waiting";
   const base = stops.length
     ? ({ kind: "linear", angle: 135, stops } as const)
     : background
@@ -62,7 +76,7 @@ export function Frost(props: FrostProps): React.ReactElement {
       else window.clearTimeout(idle);
     };
   }, [armed, freeze]);
-  const useShader = !failed && armed;
+  const useShader = !failed && armed && mode === "standalone";
 
   useEffect(() => {
     const host = hostRef.current;
@@ -128,32 +142,63 @@ export function Frost(props: FrostProps): React.ReactElement {
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [useShader, freeze, session]);
 
+  // Layered over the live background: a canvas the shader's context draws the frost into, from
+  // the background's frame and a snapshot of the content alone.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (mode !== "layered" || !layer || !host) return;
+    const canvas = document.createElement("canvas");
+    Object.assign(canvas.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
+    host.prepend(canvas);
+    let drawn = false;
+    const overlay = layer.attachOverlay(canvas, {
+      source: FROST_LAYER,
+      progress: () => freeze.get(),
+      onDraw: () => {
+        if (drawn) return;
+        drawn = true;
+        setReady(true);
+      },
+    });
+    let token = 0;
+    let live = true;
+    resnap.current = () => {
+      const face = host.parentElement;
+      if (!face) return;
+      const mine = ++token;
+      document.fonts.ready
+        .then(() => snapshotFace(face, undefined, dpr(), { background: false }))
+        .then((snap) => {
+          if (snap && mine === token && live) overlay.setContent(snap);
+        })
+        .catch(() => {});
+    };
+    resnap.current();
+    const ro = new ResizeObserver(() => resnap.current());
+    ro.observe(canvas);
+    return () => {
+      live = false;
+      ro.disconnect();
+      resnap.current = () => {};
+      overlay.remove();
+      canvas.remove();
+      setReady(false);
+    };
+  }, [mode, layer, freeze]);
+
   // Retake the snapshot when the face changes, after a beat (a stream of changes, like scrubbing
   // a limit, shouldn't clone the face every step) and again once its transitions have settled.
   useEffect(() => {
     const a = setTimeout(() => resnap.current(), 120);
     const b = setTimeout(() => resnap.current(), 800);
     return () => (clearTimeout(a), clearTimeout(b));
-    // `version`, `baseKey`, `useShader` and `session` are the triggers: a changed face or
-    // background, or a new WebGL session.
+    // `version`, `baseKey`, `useShader`, `session` and `mode` are the triggers: a changed face or
+    // background, a new WebGL session, or a switch to or from layering.
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [version, baseKey, useShader, session]);
-
-  // A live shader behind the face keeps moving after the snapshot, so retake it as the freeze
-  // starts, and again once it's done: the shader's time has eased to a stop by then, so that frame
-  // is the one it holds.
-  useEffect(() => {
-    let previous = freeze.get();
-    return freeze.subscribe((p) => {
-      const edge = (previous === 0 && p > 0) || (previous < 1 && p === 1);
-      previous = p;
-      if (edge && hostRef.current?.parentElement?.querySelector('[data-slot="card-shader"]'))
-        resnap.current();
-    });
-  }, [freeze]);
+  }, [version, baseKey, useShader, session, mode]);
 
   // The veil follows the freeze directly, and fades out once the shader has taken over.
-  const showVeil = !useShader || !ready;
+  const showVeil = mode === "layered" ? !ready : !useShader || !ready;
   const veilRef = useFreezeOpacity(showVeil);
 
   return (

@@ -93,8 +93,6 @@ void main() {
     g = pow(g, 1.3) * 2. - 1.;
     color = mix(color, vec3(step(0., g)), .35 * pow(uGrain * abs(g), .8));
   }
-  // Cooler and greyer as the card freezes.
-  color = mix(color, vec3(dot(color, vec3(.3, .59, .11))) * vec3(.85, .95, 1.1), .5 * uFreeze);
   fragColor = vec4(color, 1.);
 }
 `,

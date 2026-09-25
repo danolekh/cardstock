@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0
+
+### Frost over a live shader
+
+**Changed**
+
+- A shader background keeps running while the card is frozen. The frost is a layer over it, like ice over a screen: on a face with a `<Shader />`, `<Frost />` holds no WebGL context of its own, and is drawn as a second pass in the shaders' shared context, refracting the background's live frame with a snapshot of the card's content over it. The frost looks as it did.
+- The built-in shaders no longer grey toward ice as the card freezes; the frost owns that look. `uFreeze` is still there for your own shaders.
+
+**Removed**
+
+- `freezeRate` from `@danolekh/cardstock/shader`: time no longer slows as the card freezes.
+
+**Fixed**
+
+- Flipping a card with a shader stalled the page for over half a second. The shared canvas was resized for every card it drew, and each resize makes the GPU reallocate its buffer, several times a frame on a page with a card and smaller swatches. It now grows to fit the largest card, each card draws into its corner, and it shrinks back only after a few quiet seconds.
+- `<Shader />` restarted its animation on every flip and freeze, re-registering whenever the card's state changed. It now keeps its clock for the card's life.
+
 ## 0.4.0
 
 ### Shader backgrounds
