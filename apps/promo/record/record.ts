@@ -105,6 +105,7 @@ async function main() {
   const started = Date.now();
   for (let i = 0; i < total; i++) {
     const time = i * interval;
+    while (take.actions[0] && take.actions[0].t <= time) await take.actions.shift()!.run(page);
     const [x, y] = take.at(time);
     const down = take.down(time);
     if (x !== prev.pos[0] || y !== prev.pos[1]) await page.mouse.move(x, y);
