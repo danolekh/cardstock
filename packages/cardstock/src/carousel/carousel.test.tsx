@@ -224,6 +224,10 @@ describe("CardCarousel", () => {
     expect(style.transform).not.toMatch(/rotateY|perspective|translateZ/);
     expect(style.gridArea).toContain("1");
     expect(slides()[1]!.style.zIndex).toBe("90");
+    // The stacking stays inside the track, under the page's own menus and drawers.
+    expect((document.querySelector('[data-slot="carousel-track"]') as HTMLElement).style.isolation).toBe(
+      "isolate",
+    );
     cleanup();
     render(<Example effect="none" />);
     expect(slides()[1]!.style.transform).toBe("");

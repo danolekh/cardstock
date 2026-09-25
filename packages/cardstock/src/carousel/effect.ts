@@ -25,8 +25,12 @@ export function effectVars({ gap, turn, depth, fade, direction }: EffectOptions)
   } as React.CSSProperties;
 }
 
+/** The track is a stacking context of its own (`isolation: isolate`), so the slides' z-indexes,
+ * which put the middle card on top, only order the slides: without it they'd rise over the page's
+ * own menus, popovers and drawers too. */
 export const coverflowTrack = (dragging: boolean): React.CSSProperties => ({
   display: "grid",
+  isolation: "isolate",
   cursor: dragging ? "grabbing" : "grab",
 });
 

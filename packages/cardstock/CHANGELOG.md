@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+**Fixed**
+
+- The coverflow's cards rose over the page's own menus, popovers and drawers (a docs "Open in…" menu, a mobile sidebar). Each slide's `z-index`, which puts the middle card on top, now only orders the slides: the track is a stacking context of its own (`isolation: isolate`).
+
 ## 0.5.0
 
 ### Frost over a live shader
