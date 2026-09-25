@@ -7,11 +7,14 @@ import { useEffect, useState } from "react";
 import { CardSwiper } from "../../docs/registry/cardstock/card-carousel";
 import { PaymentCard } from "../../docs/registry/cardstock/payment-card";
 import { BACKGROUNDS, type BackgroundName } from "../../docs/src/lib/backgrounds";
+import { api, useReady } from "./common";
+import { RaiffeisenShowcase } from "./raiffeisen/showcase";
 
 /* What the recorder films, on the site's paper with nothing else on the page:
  * - `?cards=a,b,c` (the default scene): the docs' own swiper and payment cards, with one freeze
  *   switch for the card in the middle;
- * - `?scene=byo`: your own shader, typed out beside the card it comes alive on.
+ * - `?scene=byo`: your own shader, typed out beside the card it comes alive on;
+ * - `?scene=raiffeisen`: the whole library on cards in Raiffeisen's style (./raiffeisen).
  * The recorder drives the page through `window.__stage`. */
 
 const DEMO = {
@@ -31,43 +34,11 @@ const CARDS = (params.get("cards")?.split(",") ?? [
   "topo",
 ]) as BackgroundName[];
 
-interface StageApi {
-  setFlip?: (effect: CardFlipEffect) => void;
-  start?: () => void;
-}
-const api = ((window as unknown as { __stage?: StageApi }).__stage ??= {});
-
-/** Ready once fonts and artwork are in, and the shader in view has drawn a frame. */
-function useReady(backgrounds: readonly CardBackground[]) {
-  useEffect(() => {
-    const loads = backgrounds.flatMap((bg) => {
-      const src = bg.type === "image" ? bg.src : bg.type === "shader" ? bg.poster : undefined;
-      if (!src) return [];
-      const img = new Image();
-      img.src = src;
-      return [img.decode().catch(() => {})];
-    });
-    const shaders = () =>
-      new Promise<void>((resolve) => {
-        const check = () =>
-          // Only the face in view on the card in focus: the others hold on their posters.
-          [...document.querySelectorAll("[data-slot=card-front][data-visible] [data-slot=card-shader]")]
-            .filter((c) => !c.closest("[data-slot=carousel-slide]:not([data-active])"))
-            .every((c) => c.hasAttribute("data-ready") || c.hasAttribute("data-failed"))
-            ? resolve()
-            : setTimeout(check, 50);
-        check();
-      });
-    void Promise.all([document.fonts.ready, ...loads])
-      .then(shaders)
-      .then(() => document.documentElement.setAttribute("data-ready", ""));
-    // Once, for the first paint.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-}
-
 export function Stage(): React.ReactElement {
-  return params.get("scene") === "byo" ? <OwnShader /> : <Swiper />;
+  const scene = params.get("scene");
+  if (scene === "byo") return <OwnShader />;
+  if (scene === "raiffeisen") return <RaiffeisenShowcase />;
+  return <Swiper />;
 }
 
 function Swiper(): React.ReactElement {
