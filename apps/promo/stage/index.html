@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <title>cardstock stage</title>
+    <script>
+      // The recorder films a take in dark by storing the theme the way next-themes does
+      // (`--theme dark`); the docs' palette switches on this class.
+      if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+    </script>
   </head>
   <body>
     <div id="root"></div>

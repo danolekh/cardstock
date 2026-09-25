@@ -83,7 +83,9 @@ function Swiper(): React.ReactElement {
           {/* Both labels in one grid cell, so the swap never moves anything. */}
           <span className="grid">
             <span className={`[grid-area:1/1] ${frozen.has(index) ? "invisible" : ""}`}>Freeze card</span>
-            <span className={`text-sky-700 [grid-area:1/1] ${frozen.has(index) ? "" : "invisible"}`}>
+            <span
+              className={`text-sky-700 [grid-area:1/1] dark:text-sky-300 ${frozen.has(index) ? "" : "invisible"}`}
+            >
               ❄ Frozen · payments paused
             </span>
           </span>

@@ -262,6 +262,7 @@ export const takes: Record<string, TakeDef> = {
     url: "http://localhost:4173/?scene=raiffeisen",
     view: { width: 800, height: 450 },
     ready: "html[data-ready]",
+    themed: true,
     accent: "#fbf315",
     script: showcase,
   },
@@ -285,6 +286,7 @@ export const takes: Record<string, TakeDef> = {
     url: `http://localhost:4173/?cards=${SHADER_CARDS.join(",")}`,
     view: { width: 800, height: 450 },
     ready: "html[data-ready]",
+    themed: true,
     accent: "#d9482a",
     script: async (page, view) =>
       tour04(

@@ -142,7 +142,7 @@ export function RaiffeisenShowcase(): React.ReactElement {
               <span className={`[grid-area:1/1] ${isFrozen ? "invisible" : ""}`}>
                 {(own ? OWN_BG : CARDS[index])!.label} · this month
               </span>
-              <span className={`text-sky-700 [grid-area:1/1] ${isFrozen ? "" : "invisible"}`}>
+              <span className={`text-sky-700 [grid-area:1/1] dark:text-sky-300 ${isFrozen ? "" : "invisible"}`}>
                 ❄ Frozen · payments paused
               </span>
             </span>
@@ -182,18 +182,18 @@ export function RaiffeisenShowcase(): React.ReactElement {
             </div>
           </div>
           <pre
-            className={`border-fd-border bg-fd-card absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border p-5 font-mono text-[10.5px] leading-[1.7] whitespace-pre-wrap text-[#1c1a17] shadow-[0_18px_40px_-24px_rgb(0_0_0/0.35)] transition-opacity duration-300 ${coding ? "" : "pointer-events-none opacity-0"}`}
+            className={`border-fd-border bg-fd-card absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border p-5 font-mono text-[10.5px] leading-[1.7] whitespace-pre-wrap text-[#1c1a17] shadow-[0_18px_40px_-24px_rgb(0_0_0/0.35)] dark:text-[#ede7da] transition-opacity duration-300 ${coding ? "" : "pointer-events-none opacity-0"}`}
           >
-            <span className="text-[#b45309]">const</span> waves ={" "}
-            <span className="text-[#3b5bdb]">defineShader</span>({"{\n"}
-            {"  "}id: <span className="text-[#6f8a2e]">"rb/waves"</span>,{"\n"}
-            {"  "}dialect: <span className="text-[#6f8a2e]">"twigl"</span>,{"\n"}
-            {"  "}source: <span className="text-[#6f8a2e]">`</span>
+            <span className="text-[#b45309] dark:text-[#f59e0b]">const</span> waves ={" "}
+            <span className="text-[#3b5bdb] dark:text-[#8aa4ff]">defineShader</span>({"{\n"}
+            {"  "}id: <span className="text-[#6f8a2e] dark:text-[#b5d36b]">"rb/waves"</span>,{"\n"}
+            {"  "}dialect: <span className="text-[#6f8a2e] dark:text-[#b5d36b]">"twigl"</span>,{"\n"}
+            {"  "}source: <span className="text-[#6f8a2e] dark:text-[#b5d36b]">`</span>
             <span className="break-all">{coding ? SOURCE.slice(0, typed) : ""}</span>
             {coding && typed < SOURCE.length ? (
-              <span className="inline-block h-[1.1em] w-[0.5em] bg-[#161616] align-middle" />
+              <span className="inline-block h-[1.1em] w-[0.5em] bg-[#161616] align-middle dark:bg-[#fbf315]" />
             ) : null}
-            <span className="text-[#6f8a2e]">`</span>,{"\n"}
+            <span className="text-[#6f8a2e] dark:text-[#b5d36b]">`</span>,{"\n"}
             {"});"}
           </pre>
         </div>
@@ -201,7 +201,7 @@ export function RaiffeisenShowcase(): React.ReactElement {
         {/* A caption per beat, low on the stage. */}
         <div className="pointer-events-none absolute inset-x-0 bottom-5 z-40 flex justify-center">
           <span
-            className={`rounded-full bg-[#161616] px-4 py-1.5 text-[13px] font-medium tracking-[0.01em] text-[#fbf315] transition-[opacity,translate] duration-300 ${caption ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
+            className={`rounded-full bg-[#161616] px-4 py-1.5 text-[13px] font-medium tracking-[0.01em] text-[#fbf315] dark:ring-1 dark:ring-[#fbf315]/30 transition-[opacity,translate] duration-300 ${caption ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
           >
             {caption ?? " "}
           </span>
@@ -215,7 +215,7 @@ export function RaiffeisenShowcase(): React.ReactElement {
           <span className="text-fd-muted-foreground text-[17px]">
             Headless bank-card primitives for React
           </span>
-          <span className="mt-2 rounded-full bg-[#161616] px-4 py-1.5 text-[14px] font-medium text-[#fbf315]">
+          <span className="mt-2 rounded-full bg-[#161616] px-4 py-1.5 text-[14px] font-medium text-[#fbf315] dark:ring-1 dark:ring-[#fbf315]/30">
             cardstock.danolekh.com
           </span>
           <span className="text-fd-muted-foreground mt-6 text-[11px]">
