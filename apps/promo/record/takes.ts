@@ -68,7 +68,13 @@ function tour([cx, cy]: Point, toggle: Point, cards: number, view: TakeDef["view
 /** The 0.4 take: tilt a live shader and rest on its corner, the three flips (the sheen, toward
  * the tap, lift and land), a swipe through shader backgrounds that wake as they reach the middle,
  * and a freeze that brings the shader to a stop under the frost; then back to the start. */
-function tour04([cx, cy]: Point, toggle: Point, cards: number, view: TakeDef["view"]): Take {
+function tour04(
+  [cx, cy]: Point,
+  toggle: Point,
+  cards: number,
+  view: TakeDef["view"],
+  { aliveUnderFrost = false } = {},
+): Take {
   const off: Point = [view.width + 20, view.height - 40];
   const take = new Take(off).wait(300);
   const setFlip = (effect: unknown) => (page: Page) =>
@@ -110,13 +116,19 @@ function tour04([cx, cy]: Point, toggle: Point, cards: number, view: TakeDef["vi
   take.do(setFlip("sheen"));
   // Through the shaders: each wakes as it reaches the middle.
   for (let i = 1; i < cards; i++) swipe();
-  // Freeze: the frost spreads, and the shader's time eases to a stop under it.
   take
     .move(...toggle, 600)
     .wait(120)
     .click()
     .wait(1300);
-  take.move(cx + 100, cy + 30, 700).wait(1100);
+  if (aliveUnderFrost) {
+    // 0.5: the shader keeps running under the frost, so tilting the frozen card still moves the
+    // metal's reflections beneath the ice.
+    take.move(cx + 120, cy + 40, 600).loop(cx, cy, 140, 65, 2800);
+  } else {
+    // 0.4: the frost spreads, and the shader's time eases to a stop under it.
+    take.move(cx + 100, cy + 30, 700).wait(1100);
+  }
   take
     .move(...toggle, 600)
     .wait(120)
@@ -166,6 +178,22 @@ export const takes: Record<string, TakeDef> = {
         await center(page, "[data-stage=freeze]"),
         SHADER_CARDS.length,
         view,
+      ),
+  },
+
+  // cardstock 0.5: the same tour, with the frozen card's shader alive under the frost.
+  v05: {
+    url: `http://localhost:4173/?cards=${SHADER_CARDS.join(",")}`,
+    view: { width: 800, height: 450 },
+    ready: "html[data-ready]",
+    accent: "#d9482a",
+    script: async (page, view) =>
+      tour04(
+        await center(page, "[data-slot=carousel-viewport]"),
+        await center(page, "[data-stage=freeze]"),
+        SHADER_CARDS.length,
+        view,
+        { aliveUnderFrost: true },
       ),
   },
 
