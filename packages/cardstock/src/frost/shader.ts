@@ -6,9 +6,12 @@
  * noise. A shader can't read the DOM, so the face is first redrawn into a 2D canvas from an
  * untransformed clone, and that becomes the texture. The snapshot draws background colours (with
  * the top-left radius), `url()` background images (size, position and repeat), <img>s (object-fit
- * and object-position), inline SVGs, canvases (a <Shader />'s current frame), and text. Gradients in CSS aren't drawn (the card's `background`,
- * face's own), nor are borders, shadows, filters, transforms or pseudo-elements. A cross-origin
- * image is fetched with CORS; one its server doesn't allow is left out, not the whole snapshot.
+ * and object-position), inline SVGs, canvases, and text. Gradients in CSS aren't drawn (the card's
+ * `background`, face's own), nor are borders, shadows, filters, transforms or pseudo-elements.
+ * Over a <Shader />, the frost is drawn in the shader's context instead (FROST_LAYER), from the
+ * live frame and a snapshot of the content alone, so the background keeps moving under it. A
+ * cross-origin image is fetched with CORS; one its server doesn't allow is left out, not the whole
+ * snapshot.
  *
  * Each pixel is a pure function of the freeze progress, so a reversal mid-way walks back through
  * the same frames. Without WebGL2, or with `webgl={false}`, a frosted gradient fades instead;
@@ -18,7 +21,6 @@
  * bare. Anything marked `data-frost-skip` is left out of the snapshot. */
 
 import type { FrostBase } from "../background/background";
-import { grabLiveCanvas } from "../utils/live-canvas";
 import { farthestCorner, fitSize, imageUrl, linearEnds, place, type Rect, splitLayers, tiles } from "./fit";
 
 const VERT = `#version 300 es
@@ -87,6 +89,19 @@ void main() {
   outColor = vec4(frozen * amount, amount);
 }`;
 
+/** The same frost as a layer over a live background (a <Shader />), drawn in the shader's shared
+ * context: the face it refracts is the background's current frame with the content snapshot
+ * over it, so the background keeps moving under the ice. */
+export const FROST_LAYER: string = FRAG.replace(
+  "uniform sampler2D uFace;",
+  `uniform sampler2D uBackground;
+uniform sampler2D uContent;
+vec4 face(vec2 uv) {
+  vec4 content = texture(uContent, uv);
+  return vec4(mix(texture(uBackground, uv).rgb, content.rgb, content.a), 1.0);
+}`,
+).replace("texture(uFace,", "face(");
+
 export type Stop = readonly [color: string, at: number];
 
 const INHERITED = [
@@ -124,13 +139,21 @@ type Op =
       spacing: string;
     };
 
+export interface SnapshotOptions {
+  /** false: leave out the card's background (`Card.Background` and the base), on a transparent
+   * canvas, for a frost layered over a live background that's drawn separately. */
+  background?: boolean;
+}
+
 /** Redraws the card face into a canvas: an untransformed clone is laid out off-screen, then each
  * background, image, SVG and text run is drawn where the browser placed it. */
 export async function snapshotFace(
   face: HTMLElement,
   base: FrostBase | undefined,
   dpr: number,
+  options: SnapshotOptions = {},
 ): Promise<HTMLCanvasElement | null> {
+  const withBackground = options.background !== false;
   const w = face.offsetWidth;
   const h = face.offsetHeight;
   if (!w || !h) return null;
@@ -154,6 +177,7 @@ export async function snapshotFace(
     const original = sources[i];
     if (original) originals.set(c, original);
   });
+  if (!withBackground) clone.querySelectorAll('[data-slot="card-background"]').forEach((n) => n.remove());
   clone.style.transform = "none";
   clone.style.opacity = "1"; // a face faded out (the reduced-motion flip) still has its content
   clone.querySelectorAll("[data-frost-skip]").forEach((n) => n.remove());
@@ -262,7 +286,7 @@ export async function snapshotFace(
   const loaded = new Map<Op, HTMLImageElement | null>();
   await Promise.all(ops.map(async (op) => op.kind === "image" && loaded.set(op, await op.img)));
 
-  const drawn = paint(face, w, h, dpr, base, ops, loaded);
+  const drawn = paint(face, w, h, dpr, withBackground ? base : null, ops, loaded);
   if (!loaded.size) return drawn;
   // A cross-origin image served without CORS would taint the canvas, and WebGL refuses a tainted
   // texture. loadImage() leaves such images out, but a redirect can still slip one in: then the
@@ -271,16 +295,13 @@ export async function snapshotFace(
     drawn.getContext("2d")!.getImageData(0, 0, 1, 1);
     return drawn;
   } catch {
-    return paint(face, w, h, dpr, base, ops, new Map());
+    return paint(face, w, h, dpr, withBackground ? base : null, ops, new Map());
   }
 }
 
 /** The frame a canvas shows, copied into a canvas of its own; null if it can't be read. */
-function copyFrame(canvas: HTMLCanvasElement): HTMLCanvasElement | null {
-  const source = grabLiveCanvas(canvas);
-  if (!source) return null;
-  const w = "width" in source ? Number(source.width) : 0;
-  const h = "height" in source ? Number(source.height) : 0;
+function copyFrame(source: HTMLCanvasElement): HTMLCanvasElement | null {
+  const { width: w, height: h } = source;
   if (!w || !h) return null;
   const copy = document.createElement("canvas");
   copy.width = w;
@@ -312,7 +333,8 @@ function paint(
   w: number,
   h: number,
   dpr: number,
-  base: FrostBase | undefined,
+  /** null: no base at all, a transparent canvas. */
+  base: FrostBase | undefined | null,
   ops: readonly Op[],
   images: ReadonlyMap<Op, HTMLImageElement | null>,
 ): HTMLCanvasElement {
@@ -333,7 +355,7 @@ function paint(
     for (const [color, at] of base.stops) g.addColorStop(at, color);
     ctx.fillStyle = g;
   } else ctx.fillStyle = base?.color ?? getComputedStyle(face).backgroundColor;
-  ctx.fillRect(0, 0, w, h);
+  if (base !== null) ctx.fillRect(0, 0, w, h);
 
   ctx.textBaseline = "middle";
   for (const op of ops) {

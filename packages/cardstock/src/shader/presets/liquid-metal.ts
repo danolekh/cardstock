@@ -73,7 +73,6 @@ void main() {
   color *= .96 + .04 * noise(vec2(gl_FragCoord.x * .02, gl_FragCoord.y * 1.5));
   // Tinted in the mids, white in the brightest highlights.
   color = mix(color * uTint, color, smoothstep(.8, 1.1, color.g));
-  color = mix(color, vec3(dot(color, vec3(.3, .59, .11))) * vec3(.85, .95, 1.1), .5 * uFreeze);
   fragColor = vec4(clamp(color, 0., 1.), 1.);
 }
 `,

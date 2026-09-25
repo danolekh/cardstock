@@ -1,9 +1,9 @@
 /* One loop for every <Shader /> on the page: one backend, one requestAnimationFrame, one
  * IntersectionObserver. A surface is drawn only when something it shows has changed (its clock,
- * the pointer, the flip or freeze, its size), so a held or frozen card costs nothing, and the loop
- * stops altogether when no surface needs a frame. */
+ * the pointer, the flip or freeze, an overlay, its size), so a held card costs nothing, and the
+ * loop stops altogether when no surface needs a frame. */
 
-import { type Backend, createBackend, type FrameInput, type Target } from "./backend";
+import { type Backend, createBackend, type FrameInput } from "./backend";
 import type { ShaderDefinition } from "./define";
 import type { ResolvedUniform } from "./params";
 import { advance, type PlayState } from "./policy";
@@ -31,18 +31,47 @@ export interface SurfaceOptions {
   maxPixels: number;
 }
 
+/** A pass drawn over a surface's content into a canvas of its own, sampling the surface's live
+ * frame: the frost. */
+export interface OverlayOptions {
+  /** Its fragment shader; see `OverlayInput` in ./backend. */
+  source: string;
+  /** 0 hides it (its canvas is cleared once and the pass skipped). */
+  progress: () => number;
+  /** Called after each frame the overlay draws. */
+  onDraw?: () => void;
+}
+
+export interface OverlayHandle {
+  /** The content under the overlay, drawn over the surface's frame where it's opaque. */
+  setContent(content: TexImageSource | null): void;
+  remove(): void;
+}
+
 export interface SurfaceHandle {
   update(options: Partial<SurfaceOptions>): void;
   /** Something read through the inputs changed: draw again if it shows. */
   wake(): void;
+  /** Draws `overlay` over this surface into `canvas`, from the same frames. */
+  attachOverlay(canvas: HTMLCanvasElement, overlay: OverlayOptions): OverlayHandle;
   remove(): void;
+}
+
+interface Overlay extends OverlayOptions {
+  canvas: HTMLCanvasElement;
+  target: CanvasRenderingContext2D | null;
+  content: TexImageSource | null;
+  contentVersion: number;
+  /** Its canvas is blank, after a progress of 0. */
+  cleared: boolean;
 }
 
 interface Surface extends SurfaceOptions {
   canvas: HTMLCanvasElement;
   inputs: SurfaceInputs;
   onStatus: (status: SurfaceStatus) => void;
-  target: Target | null;
+  target: CanvasRenderingContext2D | null;
+  overlay: Overlay | null;
   seed: number;
   time: number;
   frame: number;
@@ -72,8 +101,6 @@ export interface Scheduler {
     inputs: SurfaceInputs,
     onStatus: (s: SurfaceStatus) => void,
   ): SurfaceHandle;
-  /** The frame a surface shows now, drawn afresh, for copying at once. */
-  grab(canvas: HTMLCanvasElement): CanvasImageSource | null;
 }
 
 export interface SchedulerEnv {
@@ -152,8 +179,8 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
       // The surfaces' canvases are bound to the old backend's way of taking frames; start them
       // over, showing their posters until the new context draws.
       surfaces.forEach((s) => {
-        s.target = null;
         s.shown = "";
+        if (s.overlay) s.overlay.contentVersion++;
         setStatus(s, { ready: false, playing: false, failed });
       });
       schedule();
@@ -187,14 +214,12 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
     uniforms: s.uniforms,
   });
 
-  const targetOf = (s: Surface, b: Backend): Target | null => {
-    if (s.target) return s.target;
+  const context2d = (canvas: HTMLCanvasElement): CanvasRenderingContext2D | null => {
     try {
-      s.target = s.canvas.getContext(b.present) as Target | null;
+      return canvas.getContext("2d");
     } catch {
-      s.target = null;
+      return null;
     }
-    return s.target;
   };
 
   /** Steps one surface; true while it still wants frames. */
@@ -202,10 +227,8 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
     const def = s.definition;
     if (!def || s.status.failed) return false;
     const visible = s.intersecting && !env.hidden() && s.cssWidth > 0 && s.cssHeight > 0;
-    const freeze = s.inputs.freeze();
-    // Frozen solid, its time has stopped: it shows a frame, but it isn't playing.
     const playing = s.state === "play" && visible;
-    setStatus(s, { playing: playing && freeze < 1 });
+    setStatus(s, { playing });
     if (!visible) return false;
 
     const prepared = b.prepare(def);
@@ -217,7 +240,7 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
     if (prepared === "pending") return true;
 
     if (s.state === "still") s.time = def.still ?? 0;
-    else if (playing) s.time = advance(s.time, dt, s.speed, freeze);
+    else if (playing) s.time = advance(s.time, dt, s.speed);
     // The pointer eases toward where it is, as the tilt surface does, so a foil doesn't jump.
     const [tx, ty] = s.inputs.pointer();
     const k = 1 - Math.exp(-dt * 12);
@@ -225,20 +248,58 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
     if (Math.abs(tx - s.pointer[0]) < 1e-4 && Math.abs(ty - s.pointer[1]) < 1e-4) s.pointer = [tx, ty];
     const settling = s.pointer[0] !== tx || s.pointer[1] !== ty;
 
+    const overlay = s.overlay;
+    const progress = overlay ? overlay.progress() : 0;
+    let overlayPending = false;
+    if (overlay && progress > 0) {
+      const state = b.prepareOverlay(overlay.source);
+      if (state instanceof Error) {
+        console.error(state.message);
+        overlay.progress = () => 0;
+      } else overlayPending = state === "pending";
+    }
+    const wants = () => settling || playing || overlayPending;
+
     const dims = size(s);
     const frame = input(s, dims);
-    const key = `${dims[0]}x${dims[1]}|${frame.time}|${s.pointer[0]},${s.pointer[1]}|${frame.flip}|${freeze}`;
+    const key = `${dims[0]}x${dims[1]}|${frame.time}|${s.pointer[0]},${s.pointer[1]}|${frame.flip}|${frame.freeze}|${overlayPending ? "…" : progress}|${overlay?.contentVersion ?? ""}`;
     const fpsGap = 1000 / Math.min(60, def.fps ?? 60) - 2;
-    if (key === s.shown) return settling || (playing && freeze < 1);
+    if (key === s.shown) return wants();
     if (s.status.ready && playing && now - s.lastDraw < fpsGap) return true;
 
-    const target = targetOf(s, b);
-    if (!target || !b.draw(def, frame, target)) return !b.lost;
+    s.target ??= context2d(s.canvas);
+    if (overlay) overlay.target ??= context2d(overlay.canvas);
+    const layered = overlay?.target && progress > 0 && !overlayPending;
+    const drawn = s.target
+      ? b.draw(
+          def,
+          frame,
+          s.target,
+          layered
+            ? {
+                source: overlay.source,
+                progress,
+                content: overlay.content,
+                contentVersion: overlay.contentVersion,
+                target: overlay.target!,
+              }
+            : undefined,
+        )
+      : false;
+    if (!drawn) return !b.lost;
+    if (overlay && progress === 0 && !overlay.cleared && overlay.target) {
+      overlay.target.clearRect(0, 0, overlay.canvas.width, overlay.canvas.height);
+      overlay.cleared = true;
+    }
+    if (layered) {
+      overlay.cleared = false;
+      overlay.onDraw?.();
+    }
     s.frame++;
     s.lastDraw = now;
     s.shown = key;
     setStatus(s, { ready: true });
-    return settling || (playing && freeze < 1);
+    return wants();
   };
 
   const tick = (now: number) => {
@@ -288,6 +349,7 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
         inputs,
         onStatus,
         target: null,
+        overlay: null,
         seed: Math.random(),
         time: options.definition?.still ?? 0,
         frame: 0,
@@ -319,6 +381,29 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
           schedule();
         },
         wake: schedule,
+        attachOverlay(overlayCanvas, overlayOptions) {
+          const overlay: Overlay = {
+            ...overlayOptions,
+            canvas: overlayCanvas,
+            target: null,
+            content: null,
+            contentVersion: 0,
+            cleared: false,
+          };
+          s.overlay = overlay;
+          s.shown = "";
+          schedule();
+          return {
+            setContent(content) {
+              overlay.content = content;
+              overlay.contentVersion++;
+              schedule();
+            },
+            remove() {
+              if (s.overlay === overlay) s.overlay = null;
+            },
+          };
+        },
         remove() {
           surfaces.delete(s);
           byCanvas.delete(canvas);
@@ -331,12 +416,6 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
           }
         },
       };
-    },
-    grab(canvas) {
-      const s = byCanvas.get(canvas);
-      const b = backend && !backend.lost ? backend : null;
-      if (!s?.definition || !b || !s.status.ready) return null;
-      return b.grab(s.definition, input(s, size(s)));
     },
   };
 }

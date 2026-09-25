@@ -68,7 +68,6 @@ void main() {
       glow = max(glow, alpha * (1. - smoothstep(radius - .75, radius + .75, length(fc - at))));
     }
   vec3 color = mix(uGround, uDot, glow);
-  color = mix(color, vec3(dot(color, vec3(.3, .59, .11))) * vec3(.85, .95, 1.1), .5 * uFreeze);
   fragColor = vec4(color, 1.);
 }
 `,

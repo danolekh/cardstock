@@ -50,15 +50,13 @@ for (const [id, load] of Object.entries(SHADER_PRESETS)) {
   }
   if (state instanceof Error) { results[id] = { error: state.message }; continue; }
   if (check) { results[id] = { ok: true }; continue; }
-  const frame = backend.grab(def, {
+  // Drawn as the library draws a card: into a 2D canvas of its own.
+  const canvas = document.createElement("canvas");
+  backend.draw(def, {
     // As a card shown 380px wide: what the poster stands in for.
     width: ${W}, height: ${H}, pixelRatio: ${W} / 380, time: def.still ?? 0, pointer: [0.5, 0.5], flip: 0, freeze: 0,
     seed: 0.37, frame: 0, uniforms: resolveParams(def, undefined),
-  });
-  const canvas = document.createElement("canvas");
-  canvas.width = ${W};
-  canvas.height = ${H};
-  canvas.getContext("2d").drawImage(frame, 0, 0);
+  }, canvas.getContext("2d"));
   results[id] = { png: canvas.toDataURL("image/png"), label: def.label, credit: def.credit ?? null };
 }
 document.getElementById("out").textContent = "@@" + JSON.stringify(results) + "@@";

@@ -6,6 +6,7 @@ import { type PartProps, usePart } from "../utils/part";
 import { useIsoLayoutEffect } from "../utils/use-iso-layout-effect";
 import { useCard } from "./context";
 import { type CardFlipStyle, DEFAULT_ORIGIN, flipFrame, flipVars, liftHeight } from "./flip";
+import { createFaceLayers, type FaceLayers } from "./layers";
 import { useInsideTiltSurface } from "./tilt";
 
 export type CardFlipEffect = CardFlipStyle | readonly CardFlipStyle[] | "none";
@@ -153,16 +154,24 @@ function Sheen() {
   );
 }
 
+export interface FaceInfo {
+  side: "front" | "back";
+  visible: boolean;
+  /** The face's shared layers: the live background, which the frost lays over. */
+  layers: FaceLayers;
+}
+
 /** The face a part is rendered on, and whether it faces the viewer; null outside the faces. */
-const FaceContext = createContext<{ side: "front" | "back"; visible: boolean } | null>(null);
-export const useFaceSide = (): { side: "front" | "back"; visible: boolean } | null => useContext(FaceContext);
+const FaceContext = createContext<FaceInfo | null>(null);
+export const useFaceSide = (): FaceInfo | null => useContext(FaceContext);
 
 function useFace(side: "front" | "back", props: CardFaceProps) {
   const { flipped, reducedMotion } = useCard();
   const { styles, turning } = useContext(BodyContext);
   const { children, ...rest } = props;
   const visible = side === "back" ? flipped : !flipped;
-  const face = useMemo(() => ({ side, visible }), [side, visible]);
+  const [layers] = useState(createFaceLayers);
+  const face = useMemo(() => ({ side, visible, layers }), [side, visible, layers]);
   const own: React.CSSProperties = turning
     ? {
         backfaceVisibility: "hidden",

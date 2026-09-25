@@ -1,5 +1,6 @@
 /* A take's mouse, as a timeline: moves, presses and releases at set times, sampled once per frame
- * by the recorder. */
+ * by the recorder, and actions on the page at set times (switching a flip style, say). */
+import type { Page } from "playwright";
 
 export type Point = [number, number];
 type Segment = { t0: number; t1: number; at: (t: number) => Point };
@@ -13,6 +14,7 @@ export class Take {
   pos: Point;
   segments: Segment[] = [];
   presses: { t: number; down: boolean }[] = [];
+  actions: { t: number; run: (page: Page) => Promise<unknown> }[] = [];
 
   /** `start` is where the mouse waits (off the frame) until the first move. */
   constructor(start: Point) {
@@ -36,6 +38,11 @@ export class Take {
       const e = ease(t);
       return [x0 + (x - x0) * e, y0 + (y - y0) * e];
     }, ms);
+  }
+  /** Runs `run` on the page when the timeline reaches now, before that frame is drawn. */
+  do(run: (page: Page) => Promise<unknown>) {
+    this.actions.push({ t: this.t, run });
+    return this;
   }
   press(down: boolean) {
     this.presses.push({ t: this.t, down });

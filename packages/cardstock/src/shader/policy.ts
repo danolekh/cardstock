@@ -28,14 +28,6 @@ export function playState(i: PlayInputs): PlayState {
   return "play";
 }
 
-const smoothstep = (x: number) => {
-  const t = Math.min(1, Math.max(0, x));
-  return t * t * (3 - 2 * t);
-};
-
-/** How fast time runs as the card freezes: full speed, easing to a stop when frozen. */
-export const freezeRate = (freeze: number): number => 1 - smoothstep(freeze);
-
-/** The shader's clock after `dt` seconds. */
-export const advance = (time: number, dt: number, speed: number, freeze: number): number =>
-  time + dt * speed * freezeRate(freeze);
+/** The shader's clock after `dt` seconds. It runs while the card is frozen too: the frost is a
+ * layer over it, like ice over a screen, not a pause. */
+export const advance = (time: number, dt: number, speed: number): number => time + dt * speed;

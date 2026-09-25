@@ -65,9 +65,119 @@ function tour([cx, cy]: Point, toggle: Point, cards: number, view: TakeDef["view
   return take;
 }
 
+/** The 0.4 take: tilt a live shader and rest on its corner, the three flips (the sheen, toward
+ * the tap, lift and land), a swipe through shader backgrounds that wake as they reach the middle,
+ * and a freeze that brings the shader to a stop under the frost; then back to the start. */
+function tour04([cx, cy]: Point, toggle: Point, cards: number, view: TakeDef["view"]): Take {
+  const off: Point = [view.width + 20, view.height - 40];
+  const take = new Take(off).wait(300);
+  const setFlip = (effect: unknown) => (page: Page) =>
+    page.evaluate((e) => (window as any).__stage.setFlip(e), effect);
+  const swipe = () =>
+    take
+      .move(cx + 90, cy, 350)
+      .wait(80)
+      .drag(-170, 260)
+      .wait(720);
+
+  // The foil follows the tilt; then the pointer rests right on the corner, and nothing flickers.
+  take.move(cx + 140, cy + 40, 700).loop(cx, cy, 150, 70, 2800);
+  take.move(cx + 176, cy - 108, 500).wait(700);
+  // The sheen, the default.
+  take
+    .move(cx + 20, cy + 10, 450)
+    .wait(100)
+    .click()
+    .wait(1050)
+    .click()
+    .wait(850);
+  // Toward the tap: a press near the top turns it over top to bottom.
+  take
+    .do(setFlip(["toward", "sheen"]))
+    .move(cx - 10, cy - 96, 450)
+    .wait(120)
+    .click()
+    .wait(1150);
+  take.click().wait(950);
+  // Lift and land.
+  take
+    .do(setFlip(["lift", "sheen"]))
+    .move(cx + 30, cy + 20, 400)
+    .wait(100)
+    .click()
+    .wait(1250);
+  take.click().wait(1000);
+  take.do(setFlip("sheen"));
+  // Through the shaders: each wakes as it reaches the middle.
+  for (let i = 1; i < cards; i++) swipe();
+  // Freeze: the frost spreads, and the shader's time eases to a stop under it.
+  take
+    .move(...toggle, 600)
+    .wait(120)
+    .click()
+    .wait(1300);
+  take.move(cx + 100, cy + 30, 700).wait(1100);
+  take
+    .move(...toggle, 600)
+    .wait(120)
+    .click()
+    .wait(900);
+  take.wait(150);
+  for (let i = 1; i < cards; i++)
+    take
+      .move(cx - 100, cy, i > 1 ? 170 : 380)
+      .wait(30)
+      .drag(200, 130, linear)
+      .wait(90);
+  take
+    .wait(900)
+    .move(off[0], cy + 120, 600)
+    .wait(300);
+  return take;
+}
+
+/** Your own shader: the twigl source types in, the card comes alive with it, and it leans with the
+ * tilt. */
+function ownShader([cx, cy]: Point, view: TakeDef["view"]): Take {
+  const off: Point = [view.width + 20, view.height - 40];
+  const take = new Take(off).wait(400);
+  take.do((page) => page.evaluate(() => (window as any).__stage.start()));
+  // Typing takes about 1s at a few characters a frame; the card goes live 250ms after.
+  take.wait(1500);
+  take.move(cx + 120, cy + 40, 700).loop(cx, cy, 130, 60, 3000);
+  take.move(off[0], cy + 100, 600).wait(600);
+  return take;
+}
+
 const DEMO = '[data-demo="raiffeisen-card"]';
 
+const SHADER_CARDS = ["holo-foil", "silk", "singularity", "mesh", "liquid-metal"];
+
 export const takes: Record<string, TakeDef> = {
+  // cardstock 0.4 on the stage: shader backgrounds, the new flips, the 2D coverflow.
+  v04: {
+    url: `http://localhost:4173/?cards=${SHADER_CARDS.join(",")}`,
+    view: { width: 800, height: 450 },
+    ready: "html[data-ready]",
+    accent: "#d9482a",
+    script: async (page, view) =>
+      tour04(
+        await center(page, "[data-slot=carousel-viewport]"),
+        await center(page, "[data-stage=freeze]"),
+        SHADER_CARDS.length,
+        view,
+      ),
+  },
+
+  // Bring your own shader: a twigl one-liner becomes a card background.
+  byo: {
+    url: "http://localhost:4173/?scene=byo",
+    view: { width: 800, height: 450 },
+    ready: "html[data-ready]",
+    accent: "#d9482a",
+    script: async (page, view) => ownShader(await center(page, "[data-slot=card-tilt]"), view),
+  },
+
   // The stage in this package (`pnpm stage`): cardstock's swiper on its own paper.
   cardstock: {
     url: "http://localhost:4173/",

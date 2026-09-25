@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { advance, freezeRate, type PlayInputs, playState } from "./policy";
+import { advance, type PlayInputs, playState } from "./policy";
 
 const base: PlayInputs = {
   play: "auto",
@@ -30,9 +30,8 @@ describe("playState", () => {
 });
 
 describe("time", () => {
-  it("runs at speed, easing to a stop as the card freezes", () => {
-    expect(advance(1, 0.5, 2, 0)).toBe(2);
-    expect(freezeRate(0.5)).toBeCloseTo(0.5);
-    expect(advance(1, 0.5, 2, 1)).toBe(1);
+  it("runs at speed, frozen or not: the frost is a layer, not a pause", () => {
+    expect(advance(1, 0.5, 2)).toBe(2);
+    expect(advance(1, 0.5, 0)).toBe(1);
   });
 });
