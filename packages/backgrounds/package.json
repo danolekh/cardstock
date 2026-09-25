@@ -20,7 +20,7 @@
     "directory": "packages/backgrounds"
   },
   "bin": {
-    "cardstock-backgrounds": "./dist/cli.js"
+    "cardstock-backgrounds": "dist/cli.js"
   },
   "files": [
     "dist",
