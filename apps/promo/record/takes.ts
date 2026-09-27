@@ -305,7 +305,7 @@ const priceDots = (page: Page) =>
  * tallest column and the priciest sale, press "Try another item", and leave the frame while the photo
  * flies home, so the clip ends where it began. The dots only exist once a listing is up, so the flow
  * runs once off camera (the page's clock is still real then) to find them, and is reset. */
-async function priceEvidence(page: Page, view: TakeDef["view"]): Promise<Take> {
+async function priceEvidence(page: Page, view: TakeDef["view"], lead = 250, tail = 400): Promise<Take> {
   const bag = await center(page, '[data-item="bag"]');
   const zone = await center(page, "[data-slot=mnm-zone]");
   // Clicked through the DOM, so the mouse never enters the frame and the cursor stays hidden.
@@ -332,7 +332,7 @@ async function priceEvidence(page: Page, view: TakeDef["view"]): Promise<Take> {
     ];
   };
   return new Take(off)
-    .wait(250)
+    .wait(lead)
     .move(...bag, 850)
     .press(true)
     .wait(160)
@@ -354,7 +354,7 @@ async function priceEvidence(page: Page, view: TakeDef["view"]): Promise<Take> {
     .move(...off, 800)
     // Past the edge Chrome stops sending moves, so the cursor would stay on the last in-frame one.
     .do((p) => p.evaluate(() => dispatchEvent(new PointerEvent("pointermove", { clientX: 4000, clientY: 0 }))))
-    .wait(400);
+    .wait(tail);
 }
 
 const LAB = (slug: string) => `[data-demo="${slug}"]`;
@@ -483,5 +483,28 @@ export const takes: Record<string, TakeDef> = {
       ${LAB("price-evidence")} .mnm-demo > p { text-align: center; }
     `,
     script: async (page, view) => priceEvidence(page, view),
+  },
+
+  // The same flow in Liquid Glass, for X: /lab/price-evidence/glass (linked only from the post), the
+  // drifting backdrop edge to edge with the dock and the panel centred. The glass has its own
+  // backdrop, so there's one cut, not a light and a dark.
+  "lab-price-evidence-glass": {
+    url: "http://localhost:3000/lab/price-evidence/glass",
+    view: { width: 960, height: 540 },
+    ready: `${LAB("price-evidence")} [data-slot=mnm-backdrop] canvas[data-ready]`,
+    accent: "#ffffff",
+    css: `
+      html, body { overflow: hidden !important; }
+      ${LAB("price-evidence")} { position: fixed !important; inset: 0 !important; z-index: 2147483000; margin: 0 !important; }
+      ${LAB("price-evidence")} .mnm-demo {
+        position: absolute !important; inset: 0; border-radius: 0 !important; padding: 0 !important;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+      }
+      ${LAB("price-evidence")} .mnm-demo > :not(style):not([data-slot=mnm-backdrop]) { width: 800px; zoom: 0.84; }
+      ${LAB("price-evidence")} .mnm-demo > p { text-align: center; }
+    `,
+    // A second of stillness at each end: the backdrop never stops drifting, so encode it with
+    // `--loop 0.8`, which crossfades the last 0.8 s into the first.
+    script: async (page, view) => priceEvidence(page, view, 1000, 1000),
   },
 };

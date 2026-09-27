@@ -106,6 +106,9 @@ page of danolekh.com rather than the stage).
    `ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate -show_entries format=duration,size <file>`.
    Naming for theme pairs on danolekh.com: `<name>-dark-*` for dark, plain `<name>-*` (or
    `<name>-light-*`) for light.
+   A take with a background that never stops (a live shader behind glass, e.g.
+   `lab-price-evidence-glass`) can't end on its first frame: hold still for a second at both ends
+   and encode with `--loop 0.8`, which crossfades the last 0.8 s into the first.
 
 8. **Publish** with the `showcase` skill: danolekh.com's post/case-study conventions, both theme
    cuts, the share image, deploy, and the pitch.

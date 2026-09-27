@@ -1,6 +1,6 @@
 /* Cuts a recorded master (out/<take>[-<theme>].mp4) down for the web.
  *
- *   pnpm --filter promo encode <master.mp4> <name> --out <dir> [--cover <dir>] [--x] [--poster <s>]
+ *   pnpm --filter promo encode <master.mp4> <name> --out <dir> [--cover <dir>] [--x] [--poster <s>] [--loop <s>]
  *
  * Writes into --out:
  *   <name>-1600.mp4          1600×900, for a hero
@@ -12,9 +12,15 @@
  * at a higher quality than the web cuts (X re-encodes whatever it gets, so it should get a lot to
  * work from), well inside its 512 MB and 2:20 limits. `--poster <s>` takes the posters from that
  * second instead of frame 0, for a video that doesn't open on its best frame. H.264 High in yuv420p with the index up
- * front, no audio: it plays inline and muted everywhere. */
+ * front, no audio: it plays inline and muted everywhere.
+ *
+ * `--loop <s>` is for a take whose background never stops (a drifting shader behind glass), so its
+ * last frame can't match its first: the last <s> seconds are crossfaded into the first <s>, and every
+ * cut starts <s> in. The take should hold still (only the background moving) for longer than <s> at
+ * both ends. `--poster` is then in the looped cut's time. */
 import { execFileSync } from "node:child_process";
 import { mkdirSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import sharp from "sharp";
@@ -30,6 +36,26 @@ if (!master || !name || !out)
   throw new Error("usage: encode <master.mp4> <name> --out <dir> [--cover <dir>] [--x]");
 mkdirSync(out, { recursive: true });
 
+let source = master;
+const loop = flag("loop");
+if (loop) {
+  const f = Number(loop);
+  const d = Number(
+    execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", master])
+      .toString()
+      .trim(),
+  );
+  source = join(tmpdir(), `${name}-loop.mp4`);
+  execFileSync("ffmpeg", [
+    ...["-y", "-loglevel", "error", "-i", master, "-an"],
+    "-filter_complex",
+    `[0:v]split[a][b];[a]trim=start=${f},setpts=PTS-STARTPTS[main];[b]trim=end=${f},setpts=PTS-STARTPTS[head];` +
+      `[main][head]xfade=transition=fade:duration=${f}:offset=${(d - 2 * f).toFixed(3)},format=yuv420p`,
+    ...["-c:v", "libx264", "-preset", "slow", "-crf", "10", source],
+  ]);
+  console.log(`looped: the last ${f}s fade into the first, ${(d - f).toFixed(2)}s long`);
+}
+
 const mb = (file: string) => `${(statSync(file).size / 1e6).toFixed(1)} MB`;
 
 for (const [width, crf] of [
@@ -38,7 +64,7 @@ for (const [width, crf] of [
 ] as const) {
   const file = join(out, `${name}-${width}.mp4`);
   execFileSync("ffmpeg", [
-    ...["-y", "-loglevel", "error", "-i", master, "-an"],
+    ...["-y", "-loglevel", "error", "-i", source, "-an"],
     ...["-vf", `scale=${width}:-2:flags=lanczos,format=yuv420p`],
     ...["-c:v", "libx264", "-preset", "slow", "-crf", String(crf), "-profile:v", "high"],
     ...["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"],
@@ -50,7 +76,7 @@ for (const [width, crf] of [
 if (args.includes("--x")) {
   const file = join(out, `${name}-x.mp4`);
   execFileSync("ffmpeg", [
-    ...["-y", "-loglevel", "error", "-i", master, "-an"],
+    ...["-y", "-loglevel", "error", "-i", source, "-an"],
     ...["-vf", "scale=1920:1080:flags=lanczos,fps=60,format=yuv420p"],
     ...["-c:v", "libx264", "-preset", "slow", "-crf", "18", "-profile:v", "high", "-level", "4.2"],
     ...["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"],
@@ -66,12 +92,12 @@ const frame = execFileSync("ffmpeg", [
     "error",
     ...(flag("poster") ? ["-ss", flag("poster")!] : []),
     "-i",
-    master,
+    source,
     "-frames:v",
     "1",
   ],
   ...["-f", "image2pipe", "-c:v", "png", "-"],
-]);
+], { maxBuffer: 64 * 1024 * 1024 }); // a lossless 1080p frame of a busy picture runs past the 1 MB default
 const posters: [string, number][] = [
   [join(out, `${name}-poster.webp`), 1600],
   [join(out, `${name}-poster-800.webp`), 800],
