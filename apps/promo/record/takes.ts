@@ -464,10 +464,10 @@ export const takes: Record<string, TakeDef> = {
       ),
   },
 
-  // The lab's price plot for Minimist on danolekh.com (`pnpm dev` in that repo, `--url` for another
-  // port): the demo card centred in the frame, scaled to fit it.
+  // The lab's price plot in Minimist's own style (/lab/price-evidence/minimist on danolekh.com,
+  // `pnpm dev` in that repo, `--url` for another port): the demo card centred, scaled to fit.
   "lab-price-evidence": {
-    url: "http://localhost:3000/lab/price-evidence",
+    url: "http://localhost:3000/lab/price-evidence/minimist",
     view: { width: 960, height: 540 },
     ready: `${LAB("price-evidence")} [data-slot=mnm-zone]`,
     themed: true,
@@ -485,11 +485,11 @@ export const takes: Record<string, TakeDef> = {
     script: async (page, view) => priceEvidence(page, view),
   },
 
-  // The same flow in Liquid Glass, for X: /lab/price-evidence/glass (linked only from the post), the
-  // drifting backdrop edge to edge with the dock and the panel centred. The glass has its own
-  // backdrop, so there's one cut, not a light and a dark.
+  // The same flow in Liquid Glass, the lab page's own look (the Minimist-styled one is
+  // /lab/price-evidence/minimist): the backdrop edge to edge with the dock and the panel centred.
+  // The glass has its own backdrop, so there's one cut, not a light and a dark.
   "lab-price-evidence-glass": {
-    url: "http://localhost:3000/lab/price-evidence/glass",
+    url: "http://localhost:3000/lab/price-evidence",
     view: { width: 960, height: 540 },
     ready: `${LAB("price-evidence")} [data-slot=mnm-backdrop] canvas[data-ready]`,
     accent: "#ffffff",
