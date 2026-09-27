@@ -271,6 +271,60 @@ const DEMO = '[data-demo="raiffeisen-card"]';
 
 const SHADER_CARDS = ["holo-foil", "silk", "singularity", "mesh", "liquid-metal"];
 
+
+/** Where the lab's price plot draws a dot, from its `cx`/`cy` and the svg's box, so the answer
+ * doesn't depend on whether the dots are mid-drop when it's asked. */
+const priceDots = (page: Page) =>
+  page.evaluate(() => {
+    const svg = document.querySelector<SVGSVGElement>(".pe-plot svg")!;
+    const box = svg.getBoundingClientRect();
+    const vb = svg.viewBox.baseVal;
+    const at = (c: Element): [number, number] => [
+      box.left + (Number(c.getAttribute("cx")) / vb.width) * box.width,
+      box.top + (Number(c.getAttribute("cy")) / vb.height) * box.height,
+    ];
+    const dots = [...svg.querySelectorAll(".pe-dot")];
+    const band = svg.querySelector(".pe-band")!;
+    const bx = Number(band.getAttribute("x"));
+    const bw = Number(band.getAttribute("width"));
+    // The top dot of the column nearest to a point `f` of the way across the range.
+    const topNear = (f: number) => {
+      const x = bx + bw * f;
+      const cx = dots.map((d) => Number(d.getAttribute("cx")));
+      const col = cx.reduce((a, b) => (Math.abs(b - x) < Math.abs(a - x) ? b : a));
+      const column = dots.filter((d) => Number(d.getAttribute("cx")) === col);
+      return at(column.reduce((a, b) => (Number(b.getAttribute("cy")) < Number(a.getAttribute("cy")) ? b : a)));
+    };
+    const tallest = dots.reduce((a, b) => (Number(b.getAttribute("cy")) < Number(a.getAttribute("cy")) ? b : a));
+    const last = dots.reduce((a, b) => (Number(b.getAttribute("cx")) > Number(a.getAttribute("cx")) ? b : a));
+    return { tallest: at(tallest), mid: topNear(0.62), edge: topNear(0.95), outlier: at(last) };
+  });
+
+/** Replay from empty (off camera, before the first frame), let the sales drop in and the range
+ * settle, point along the tall columns and out to the priciest sale, then press Replay: the clip
+ * ends where it began, on an empty plot with the pointer on the button. */
+async function priceEvidence(page: Page): Promise<Take> {
+  const replay = await center(page, "[data-slot=price-evidence-replay]");
+  const { tallest, mid, edge, outlier } = await priceDots(page);
+  return new Take(replay)
+    .do((p) => p.click("[data-slot=price-evidence-replay]"))
+    .wait(2500)
+    .move(...tallest, 800)
+    .wait(900)
+    .move(...mid, 650)
+    .wait(650)
+    .move(...edge, 500)
+    .wait(550)
+    .move(...outlier, 850)
+    .wait(1000)
+    .move(...replay, 900)
+    .wait(250)
+    .click()
+    .wait(120);
+}
+
+const LAB = (slug: string) => `[data-demo="${slug}"]`;
+
 export const takes: Record<string, TakeDef> = {
   showreel: {
     url: "http://localhost:4174/?record",
@@ -374,5 +428,26 @@ export const takes: Record<string, TakeDef> = {
         4,
         view,
       ),
+  },
+
+  // The lab's price plot for Minimist on danolekh.com (`pnpm dev` in that repo, `--url` for another
+  // port): the demo card centred in the frame, scaled to fit it.
+  "lab-price-evidence": {
+    url: "http://localhost:3000/lab/price-evidence",
+    view: { width: 960, height: 540 },
+    ready: `${LAB("price-evidence")} [data-slot=price-evidence-replay]`,
+    themed: true,
+    accent: "#7676BF",
+    css: `
+      html, body { overflow: hidden !important; }
+      ${LAB("price-evidence")} { position: fixed !important; inset: 0 !important; z-index: 2147483000; margin: 0 !important; }
+      ${LAB("price-evidence")} .mnm-demo {
+        position: absolute; inset: 0; border-radius: 0 !important; padding: 0 !important;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+      }
+      ${LAB("price-evidence")} .mnm-demo > div { width: 620px; padding: 22px 30px 16px !important; zoom: 0.84; }
+      ${LAB("price-evidence")} .mnm-demo > p { width: 520px; margin-top: 8px !important; text-align: center; }
+    `,
+    script: async (page) => priceEvidence(page),
   },
 };
