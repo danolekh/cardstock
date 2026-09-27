@@ -300,27 +300,61 @@ const priceDots = (page: Page) =>
     return { tallest: at(tallest), mid: topNear(0.62), edge: topNear(0.95), outlier: at(last) };
   });
 
-/** Replay from empty (off camera, before the first frame), let the sales drop in and the range
- * settle, point along the tall columns and out to the priciest sale, then press Replay: the clip
- * ends where it began, on an empty plot with the pointer on the button. */
-async function priceEvidence(page: Page): Promise<Take> {
-  const replay = await center(page, "[data-slot=price-evidence-replay]");
-  const { tallest, mid, edge, outlier } = await priceDots(page);
-  return new Take(replay)
-    .do((p) => p.click("[data-slot=price-evidence-replay]"))
-    .wait(2500)
-    .move(...tallest, 800)
-    .wait(900)
-    .move(...mid, 650)
-    .wait(650)
-    .move(...edge, 500)
-    .wait(550)
-    .move(...outlier, 850)
-    .wait(1000)
-    .move(...replay, 900)
+/** The lab's Minimist demo from the user's side: take the bag photo from the row, drag it into the
+ * card and let go; the photo is read, the listing comes back and its sales drop in. Point at the
+ * tallest column and the priciest sale, press "Try another item", and leave the frame while the photo
+ * flies home, so the clip ends where it began. The dots only exist once a listing is up, so the flow
+ * runs once off camera (the page's clock is still real then) to find them, and is reset. */
+async function priceEvidence(page: Page, view: TakeDef["view"]): Promise<Take> {
+  const bag = await center(page, '[data-item="bag"]');
+  const zone = await center(page, "[data-slot=mnm-zone]");
+  // Clicked through the DOM, so the mouse never enters the frame and the cursor stays hidden.
+  const tap = (selector: string) =>
+    page.evaluate((s) => document.querySelector<HTMLElement>(s)!.click(), selector);
+  await tap('[data-item="bag"]');
+  await page.waitForSelector("[data-slot=price-evidence]");
+  await page.waitForTimeout(3600);
+  const { tallest, outlier } = await priceDots(page);
+  const reset = await center(page, "[data-slot=mnm-reset]");
+  await tap("[data-slot=mnm-reset]");
+  await page.waitForFunction(() => document.querySelector(".mnm-demo")?.getAttribute("data-phase") === "idle");
+  await page.waitForTimeout(900);
+
+  const off: Point = [view.width + 60, view.height * 0.3];
+  // The drag bows upward a little, the way a hand carries something.
+  const lift: Point = [(bag[0] + zone[0]) / 2 + 40, Math.min(bag[1], zone[1]) - 10];
+  const arc = (t: number): Point => {
+    const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+    const u = 1 - e;
+    return [
+      u * u * bag[0] + 2 * u * e * lift[0] + e * e * zone[0],
+      u * u * bag[1] + 2 * u * e * lift[1] + e * e * zone[1],
+    ];
+  };
+  return new Take(off)
     .wait(250)
+    .move(...bag, 850)
+    .press(true)
+    .wait(160)
+    .path(arc, 950)
+    .wait(220)
+    .press(false)
+    .wait(700)
+    // While the photo is read, the hand drifts over to where the listing will be.
+    .move((zone[0] + tallest[0]) / 2 + 20, (zone[1] + tallest[1]) / 2 + 30, 1300)
+    .wait(2300)
+    .move(...tallest, 750)
+    .wait(900)
+    .move(...outlier, 900)
+    .wait(900)
+    .move(...reset, 850)
+    .wait(200)
     .click()
-    .wait(120);
+    .wait(100)
+    .move(...off, 800)
+    // Past the edge Chrome stops sending moves, so the cursor would stay on the last in-frame one.
+    .do((p) => p.evaluate(() => dispatchEvent(new PointerEvent("pointermove", { clientX: 4000, clientY: 0 }))))
+    .wait(400);
 }
 
 const LAB = (slug: string) => `[data-demo="${slug}"]`;
@@ -435,9 +469,9 @@ export const takes: Record<string, TakeDef> = {
   "lab-price-evidence": {
     url: "http://localhost:3000/lab/price-evidence",
     view: { width: 960, height: 540 },
-    ready: `${LAB("price-evidence")} [data-slot=price-evidence-replay]`,
+    ready: `${LAB("price-evidence")} [data-slot=mnm-zone]`,
     themed: true,
-    accent: "#7676BF",
+    accent: "#141413",
     css: `
       html, body { overflow: hidden !important; }
       ${LAB("price-evidence")} { position: fixed !important; inset: 0 !important; z-index: 2147483000; margin: 0 !important; }
@@ -445,9 +479,9 @@ export const takes: Record<string, TakeDef> = {
         position: absolute; inset: 0; border-radius: 0 !important; padding: 0 !important;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
       }
-      ${LAB("price-evidence")} .mnm-demo > div { width: 620px; padding: 22px 30px 16px !important; zoom: 0.84; }
-      ${LAB("price-evidence")} .mnm-demo > p { width: 520px; margin-top: 8px !important; text-align: center; }
+      ${LAB("price-evidence")} .mnm-demo > :not(style) { width: 800px; zoom: 0.84; }
+      ${LAB("price-evidence")} .mnm-demo > p { text-align: center; }
     `,
-    script: async (page) => priceEvidence(page),
+    script: async (page, view) => priceEvidence(page, view),
   },
 };
