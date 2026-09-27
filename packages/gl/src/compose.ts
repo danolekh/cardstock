@@ -5,8 +5,8 @@
 import { type ShaderDefinition, uniformName } from "./define";
 
 /** Every shader gets these. `uPixelRatio` is the pixels drawn per CSS pixel, `uPointer` 0..1 over
- * the card (y down, as the DOM has it), `uTilt` −1..1 from the middle, `uFlip` and `uFreeze` the
- * card's 0..1 progress, `uSeed` 0..1 per card. */
+ * the surface (y down, as the DOM has it), `uTilt` −1..1 from the middle, `uSeed` 0..1 per
+ * surface. Its declared inputs follow as floats. */
 const PRELUDE = `#version 300 es
 precision highp float;
 precision highp int;
@@ -15,8 +15,6 @@ uniform vec2 uResolution;
 uniform float uPixelRatio;
 uniform vec2 uPointer;
 uniform vec2 uTilt;
-uniform float uFlip;
-uniform float uFreeze;
 uniform float uSeed;
 uniform int uFrame;
 out vec4 fragColor;
@@ -136,15 +134,19 @@ function twiglHelpers(source: string) {
   return out;
 }
 
-function paramUniforms(definition: ShaderDefinition) {
-  return Object.entries(definition.params ?? {})
-    .map(([param, spec]) => {
-      const name = uniformName(param);
-      if (spec.type === "float") return `uniform float ${name};\n`;
-      if (spec.type === "color") return `uniform vec3 ${name};\n`;
-      return `uniform vec3 ${name}[${spec.max}];\nuniform int ${name}Count;\n`;
-    })
-    .join("");
+function declaredUniforms(definition: ShaderDefinition) {
+  const inputs = (definition.inputs ?? []).map((input) => `uniform float ${uniformName(input)};\n`).join("");
+  return (
+    inputs +
+    Object.entries(definition.params ?? {})
+      .map(([param, spec]) => {
+        const name = uniformName(param);
+        if (spec.type === "float") return `uniform float ${name};\n`;
+        if (spec.type === "color") return `uniform vec3 ${name};\n`;
+        return `uniform vec3 ${name}[${spec.max}];\nuniform int ${name}Count;\n`;
+      })
+      .join("")
+  );
 }
 
 /** A shader that can't work here, found before the GPU sees it. */
@@ -154,14 +156,14 @@ export class ShaderSourceError extends Error {}
  * that samples channels, which have nothing to sample. */
 export function composeFragment(definition: ShaderDefinition): string {
   const source = definition.source.trim();
-  const head = PRELUDE + paramUniforms(definition);
+  const head = PRELUDE + declaredUniforms(definition);
   switch (definition.dialect ?? "glsl") {
     case "glsl":
       return `${head}#line 1\n${source}\n`;
     case "shadertoy":
       if (/\biChannel\d/.test(source))
         throw new ShaderSourceError(
-          `cardstock: shader "${definition.id}" samples iChannels; only single-pass Shadertoy code without inputs is supported.`,
+          `@danolekh/gl: shader "${definition.id}" samples iChannels; only single-pass Shadertoy code without inputs is supported.`,
         );
       return `${head}#define iTime uTime
 #define iResolution vec3(uResolution, 1.0)

@@ -1,4 +1,5 @@
 "use client";
+import { pageScheduler, resolveParams, type SurfaceHandle, type SurfaceStatus } from "@danolekh/gl";
 import type * as React from "react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 
@@ -11,12 +12,10 @@ import { SlideContext } from "../carousel/context";
 import { usePrefersReducedMotion } from "../utils/media";
 import { type PartProps, usePart } from "../utils/part";
 import { useIsoLayoutEffect } from "../utils/use-iso-layout-effect";
-import type { ShaderDefinition } from "./define";
+import { cardDefinition, type ShaderDefinition } from "./define";
 import { useShaderLibrary } from "./library";
-import { resolveParams } from "./params";
 import { playState, type ShaderPlay } from "./policy";
 import { loadShaderPreset } from "./presets";
-import { pageScheduler, type SurfaceHandle, type SurfaceStatus } from "./scheduler";
 
 export interface ShaderState extends Record<string, unknown> {
   /** Its first frame is drawn, and it shows over the poster. */
@@ -102,7 +101,8 @@ export function Shader(props: ShaderProps): React.ReactElement | null {
     };
   }, [known, id]);
   const settled = loaded && loaded.id === id ? loaded : null;
-  const definition = known ?? settled?.definition ?? undefined;
+  const found = known ?? settled?.definition ?? undefined;
+  const definition = found ? cardDefinition(found) : undefined;
   const missing = !known && settled?.definition === null;
 
   const [status, setStatus] = useState<SurfaceStatus>({ ready: false, playing: false, failed: false });
@@ -149,9 +149,11 @@ export function Shader(props: ShaderProps): React.ReactElement | null {
       canvas,
       latest.current,
       {
-        freeze: freeze ? () => freeze.get() : zero,
-        flip: flip ? () => flip.get() : zero,
         pointer: pointer ? () => [pointer.x, pointer.y] as const : center,
+        values: {
+          freeze: freeze ? () => freeze.get() : zero,
+          flip: flip ? () => flip.get() : zero,
+        },
       },
       setStatus,
     );

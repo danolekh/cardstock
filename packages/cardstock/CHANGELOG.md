@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2
+
+**Changed**
+
+- The shader runtime (the shared WebGL2 context, the scheduler, the GLSL composer and the parameter resolver) moved into its own package, [`@danolekh/gl`](https://www.npmjs.com/package/@danolekh/gl), which cardstock now depends on. Other libraries on the same page, such as earshot's orb, draw through the same context instead of opening another. Nothing in cardstock's API changed: `defineShader`, `composeFragment`, `resolveParams` and `parseRgb` are exported as before, and a card shader still reads `uFlip` and `uFreeze`.
+
 ## 0.5.1
 
 **Fixed**

@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import { composeFragment, ShaderSourceError } from "./compose";
 import { defineShader } from "./define";
-import { SHADER_PRESETS } from "./presets";
 
 describe("composeFragment", () => {
-  it("declares the shared and parameter uniforms, and keeps GLSL as written", () => {
+  it("declares the shared, input and parameter uniforms, and keeps GLSL as written", () => {
     const source = "void main() { fragColor = vec4(uTint, 1.); }";
     const out = composeFragment(
       defineShader({
         id: "test/glsl",
         label: "GLSL",
         source,
+        inputs: ["level"],
         params: {
           tint: { type: "color", default: "#fff" },
           colors: { type: "colors", default: ["#fff"], max: 3 },
@@ -23,7 +23,7 @@ describe("composeFragment", () => {
       "float uTime",
       "vec2 uResolution",
       "vec2 uPointer",
-      "float uFreeze",
+      "float uLevel",
       "vec3 uTint",
       "vec3 uColors[3]",
       "int uColorsCount",
@@ -60,13 +60,5 @@ describe("composeFragment", () => {
     expect(out).not.toContain("snoise3D");
     // No preprocessor macros for the one-letter names, which would break swizzles like `.r`.
     expect(out).not.toMatch(/#define [rtmf]\b/);
-  });
-
-  it("composes every built-in preset", async () => {
-    for (const load of Object.values(SHADER_PRESETS)) {
-      const def = await load();
-      expect(() => composeFragment(def)).not.toThrow();
-      expect(def.license).toBeTruthy();
-    }
   });
 });

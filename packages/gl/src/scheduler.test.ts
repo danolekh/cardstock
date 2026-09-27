@@ -4,7 +4,13 @@ import type { Backend, FrameInput, OverlayInput } from "./backend";
 import { defineShader } from "./define";
 import { createScheduler, type SurfaceOptions, type SurfaceStatus } from "./scheduler";
 
-const def = defineShader({ id: "test/s", label: "S", source: "void main() {}", still: 2 });
+const def = defineShader({
+  id: "test/s",
+  label: "S",
+  source: "void main() {}",
+  inputs: ["freeze"],
+  still: 2,
+});
 
 function setup(opts: { backend?: () => Backend | null; overlay?: () => "ready" | "pending" } = {}) {
   const draws: { def: string; input: FrameInput; overlay?: OverlayInput }[] = [];
@@ -59,7 +65,7 @@ function setup(opts: { backend?: () => Backend | null; overlay?: () => "ready" |
     const handle = scheduler.add(
       canvas,
       { definition: def, uniforms: [], speed: 1, state: "play", maxDpr: 2, maxPixels: 1e6, ...patch },
-      { freeze, flip: () => 0, pointer: () => [0.5, 0.5] },
+      { pointer: () => [0.5, 0.5], values: { freeze } },
       (s) => statuses.push(s),
     );
     intersect.forEach((f) => f(canvas, true));
@@ -146,10 +152,11 @@ describe("the shader scheduler", () => {
     expect(t.draws.length).toBeGreaterThan(drawn);
   });
 
-  it("keeps running while the card is frozen", () => {
+  it("reads each input every frame, and keeps running while one is set", () => {
     const t = setup();
     const { statuses } = t.add({}, () => 1);
     t.run(16, 5);
+    expect(t.draws.at(-1)!.input.inputs).toEqual({ freeze: 1 });
     expect(t.draws.at(-1)!.input.time).toBeGreaterThan(t.draws[0]!.input.time);
     expect(t.frames()).toBe(1);
     expect(statuses.at(-1)).toMatchObject({ playing: true });

@@ -9,8 +9,7 @@ export {
   type ShaderDialect,
   type ShaderParamSpec,
 } from "./define";
-export { composeFragment, ShaderSourceError } from "./compose";
-export { resolveParams, type ResolvedUniform } from "./params";
+export { composeFragment, ShaderSourceError, resolveParams, type ResolvedUniform } from "@danolekh/gl";
 export { playState, type ShaderPlay, type PlayState } from "./policy";
 export { SHADER_PRESETS, loadShaderPreset } from "./presets";
 export {

@@ -2,8 +2,11 @@
  * when it's the right kind and clamped to range, else its default. Names the shader doesn't
  * declare are dropped. */
 
-import { parseRgb, type ShaderParamValue } from "../background/background";
+import { parseRgb } from "./color";
 import { type ShaderDefinition, uniformName } from "./define";
+
+/** A parameter as data: a number, a colour, or a list of either. */
+export type ShaderParamValue = number | string | readonly number[] | readonly string[];
 
 export type ResolvedUniform =
   | { name: string; kind: "float"; value: number }
@@ -29,7 +32,7 @@ export function resolveParams(
     for (const name of Object.keys(given))
       if (!definition.params?.[name] && !warned.has(`${definition.id}:${name}`)) {
         warned.add(`${definition.id}:${name}`);
-        console.warn(`cardstock: shader "${definition.id}" has no parameter "${name}"; it's ignored.`);
+        console.warn(`@danolekh/gl: shader "${definition.id}" has no parameter "${name}"; it's ignored.`);
       }
   return Object.entries(definition.params ?? {}).map(([param, spec]): ResolvedUniform => {
     const name = uniformName(param);

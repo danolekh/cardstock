@@ -1,6 +1,6 @@
-/* The one WebGL2 context every <Shader /> on the page shares. Browsers keep only about sixteen
+/* The one WebGL2 context every shader surface on the page shares. Browsers keep only about sixteen
  * contexts alive, so a carousel of shader cards can't have one each: instead each frame is drawn
- * here and copied into the card's own 2D canvas while the drawing buffer is still valid.
+ * here and copied into the surface's own 2D canvas while the drawing buffer is still valid.
  *
  * Every surface draws into the bottom-left corner of the one canvas, which only ever grows to the
  * largest of them (and shrinks, rarely, once nothing that large has drawn for a while). Resizing it
@@ -13,7 +13,7 @@
  * texture live (with a snapshot of the content), into the overlay's canvas. */
 
 import { composeFragment, VERTEX } from "./compose";
-import type { ShaderDefinition } from "./define";
+import { type ShaderDefinition, uniformName } from "./define";
 import type { ResolvedUniform } from "./params";
 
 export interface FrameInput {
@@ -23,8 +23,8 @@ export interface FrameInput {
   pixelRatio: number;
   time: number;
   pointer: readonly [number, number];
-  flip: number;
-  freeze: number;
+  /** The definition's inputs, read this frame. */
+  inputs: Readonly<Record<string, number>>;
   seed: number;
   frame: number;
   uniforms: readonly ResolvedUniform[];
@@ -216,14 +216,14 @@ function createBackendWith(canvas: OffscreenCanvas | HTMLCanvasElement, gl: WebG
           gl.getShaderInfoLog(entry.vertex) ||
           gl.getProgramInfoLog(entry.program) ||
           "";
-        return new Error(`cardstock: ${name} didn't compile.\n${log}`);
+        return new Error(`@danolekh/gl: ${name} didn't compile.\n${log}`);
       }
     }
     return "ready";
   };
 
   const prepare = (definition: ShaderDefinition): "ready" | "pending" | Error => {
-    if (lost) return new Error("cardstock: the WebGL context was lost.");
+    if (lost) return new Error("@danolekh/gl: the WebGL context was lost.");
     let entry = programs.get(definition);
     if (!entry) {
       try {
@@ -240,7 +240,7 @@ function createBackendWith(canvas: OffscreenCanvas | HTMLCanvasElement, gl: WebG
   };
 
   const prepareOverlay = (source: string): "ready" | "pending" | Error => {
-    if (lost) return new Error("cardstock: the WebGL context was lost.");
+    if (lost) return new Error("@danolekh/gl: the WebGL context was lost.");
     let entry = overlays.get(source);
     if (!entry) overlays.set(source, (entry = build(UV_VERTEX, source)));
     if (entry instanceof Error) return entry;
@@ -322,8 +322,7 @@ function createBackendWith(canvas: OffscreenCanvas | HTMLCanvasElement, gl: WebG
     gl.uniform1f(at("uPixelRatio"), input.pixelRatio);
     gl.uniform2f(at("uPointer"), input.pointer[0], input.pointer[1]);
     gl.uniform2f(at("uTilt"), input.pointer[0] * 2 - 1, input.pointer[1] * 2 - 1);
-    gl.uniform1f(at("uFlip"), input.flip);
-    gl.uniform1f(at("uFreeze"), input.freeze);
+    for (const [name, value] of Object.entries(input.inputs)) gl.uniform1f(at(uniformName(name)), value);
     gl.uniform1f(at("uSeed"), input.seed);
     gl.uniform1i(at("uFrame"), input.frame);
     for (const u of input.uniforms) {

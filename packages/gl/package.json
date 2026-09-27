@@ -1,0 +1,43 @@
+{
+  "name": "@danolekh/gl",
+  "version": "0.1.0",
+  "description": "One WebGL2 context and one animation frame for every live shader on the page: GLSL, Shadertoy and twigl definitions, typed parameters, live inputs, off-screen pausing, adaptive resolution and context-loss recovery. Framework-free.",
+  "keywords": [
+    "glsl",
+    "shader",
+    "shadertoy",
+    "webgl",
+    "webgl2"
+  ],
+  "homepage": "https://cardstock.danolekh.com",
+  "license": "MIT",
+  "author": "Dan Olekh <danyaolekhq@gmail.com> (https://danolekh.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danolekh/cardstock.git",
+    "directory": "packages/gl"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "lint:pkg": "publint"
+  },
+  "devDependencies": {
+    "happy-dom": "20.14.5",
+    "publint": "0.3.24",
+    "tsdown": "0.23.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}

@@ -187,6 +187,10 @@ importers:
         version: 5.0.1(@types/node@26.6.2)(happy-dom@20.14.5)(vite@8.3.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/cardstock:
+    dependencies:
+      '@danolekh/gl':
+        specifier: workspace:^
+        version: link:../gl
     devDependencies:
       '@base-ui/react':
         specifier: 1.8.0
@@ -218,6 +222,24 @@ importers:
       react-dom:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
+      tsdown:
+        specifier: 0.23.0
+        version: 0.23.0(publint@0.3.24)(typescript@7.0.2)
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1(@types/node@26.6.2)(happy-dom@20.14.5)(vite@8.3.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/gl:
+    devDependencies:
+      happy-dom:
+        specifier: 20.14.5
+        version: 20.14.5
+      publint:
+        specifier: 0.3.24
+        version: 0.3.24
       tsdown:
         specifier: 0.23.0
         version: 0.23.0(publint@0.3.24)(typescript@7.0.2)

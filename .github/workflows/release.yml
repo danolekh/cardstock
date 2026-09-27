@@ -3,7 +3,10 @@ name: Release
 # After CI passes on main: publish each package whose version isn't on npm yet, then deploy the
 # docs. A routine push only redeploys the docs; bumping the version in a package's package.json
 # is what makes a release of it (@danolekh/cardstock tags `v…`, the backgrounds CLI
-# `backgrounds-v…`).
+# `backgrounds-v…`, the shared WebGL runtime `gl-v…`).
+#
+# Packages publish one at a time, @danolekh/gl first, since cardstock depends on it. Each is packed
+# with pnpm, which turns `workspace:^` into a real version range, and the tarball goes out with npm.
 #
 # Publishing uses npm trusted publishing (OIDC), so there's no npm token: the package's settings
 # on npmjs.com name this repo and this file as its trusted publisher. The docs deploy needs the
@@ -25,10 +28,14 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     strategy:
-      # One package failing to publish shouldn't stop the other.
+      # One package failing to publish shouldn't stop the others.
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
+          - dir: gl
+            name: "@danolekh/gl"
+            tag: gl-v
           - dir: cardstock
             name: "@danolekh/cardstock"
             tag: v
@@ -72,7 +79,9 @@ jobs:
       - if: steps.version.outputs.new == 'true'
         name: Publish
         working-directory: packages/${{ matrix.dir }}
-        run: npm publish --access public
+        run: |
+          pnpm pack --pack-destination "$RUNNER_TEMP"
+          npm publish "$RUNNER_TEMP"/*.tgz --access public
       - if: steps.version.outputs.new == 'true'
         name: Tag
         run: |

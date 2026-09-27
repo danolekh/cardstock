@@ -1,7 +1,7 @@
-/* One loop for every <Shader /> on the page: one backend, one requestAnimationFrame, one
+/* One loop for every shader surface on the page: one backend, one requestAnimationFrame, one
  * IntersectionObserver. A surface is drawn only when something it shows has changed (its clock,
- * the pointer, the flip or freeze, an overlay, its size), so a held card costs nothing, and the
- * loop stops altogether when no surface needs a frame. */
+ * the pointer, an input, an overlay, its size), so a held surface costs nothing, and the loop
+ * stops altogether when no surface needs a frame. */
 
 import { type Backend, createBackend, type FrameInput } from "./backend";
 import type { ShaderDefinition } from "./define";
@@ -17,10 +17,13 @@ export interface SurfaceStatus {
 
 /** What a surface reads each frame, without re-rendering React. */
 export interface SurfaceInputs {
-  freeze: () => number;
-  flip: () => number;
-  pointer: () => readonly [number, number];
+  /** 0..1 over the surface, y down; the middle when absent. */
+  pointer?: () => readonly [number, number];
+  /** Getters for the definition's `inputs`, by name; an input without one reads 0. */
+  values?: Readonly<Record<string, () => number>>;
 }
+
+const CENTER = [0.5, 0.5] as const;
 
 export interface SurfaceOptions {
   definition: ShaderDefinition | null;
@@ -207,8 +210,9 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
     pixelRatio: s.cssWidth ? width / s.cssWidth : 1,
     time: s.time,
     pointer: s.pointer,
-    flip: s.inputs.flip(),
-    freeze: s.inputs.freeze(),
+    inputs: Object.fromEntries(
+      (s.definition?.inputs ?? []).map((name) => [name, s.inputs.values?.[name]?.() ?? 0]),
+    ),
     seed: s.seed,
     frame: s.frame,
     uniforms: s.uniforms,
@@ -242,7 +246,7 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
     if (s.state === "still") s.time = def.still ?? 0;
     else if (playing) s.time = advance(s.time, dt, s.speed);
     // The pointer eases toward where it is, as the tilt surface does, so a foil doesn't jump.
-    const [tx, ty] = s.inputs.pointer();
+    const [tx, ty] = s.inputs.pointer?.() ?? CENTER;
     const k = 1 - Math.exp(-dt * 12);
     s.pointer = [s.pointer[0] + (tx - s.pointer[0]) * k, s.pointer[1] + (ty - s.pointer[1]) * k];
     if (Math.abs(tx - s.pointer[0]) < 1e-4 && Math.abs(ty - s.pointer[1]) < 1e-4) s.pointer = [tx, ty];
@@ -262,7 +266,7 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
 
     const dims = size(s);
     const frame = input(s, dims);
-    const key = `${dims[0]}x${dims[1]}|${frame.time}|${s.pointer[0]},${s.pointer[1]}|${frame.flip}|${frame.freeze}|${overlayPending ? "…" : progress}|${overlay?.contentVersion ?? ""}`;
+    const key = `${dims[0]}x${dims[1]}|${frame.time}|${s.pointer[0]},${s.pointer[1]}|${Object.values(frame.inputs).join(",")}|${overlayPending ? "…" : progress}|${overlay?.contentVersion ?? ""}`;
     const fpsGap = 1000 / Math.min(60, def.fps ?? 60) - 2;
     if (key === s.shown) return wants();
     if (s.status.ready && playing && now - s.lastDraw < fpsGap) return true;
@@ -353,7 +357,7 @@ export function createScheduler(env: SchedulerEnv): Scheduler {
         seed: Math.random(),
         time: options.definition?.still ?? 0,
         frame: 0,
-        pointer: [...inputs.pointer()] as [number, number],
+        pointer: [...(inputs.pointer?.() ?? CENTER)] as [number, number],
         cssWidth: canvas.clientWidth,
         cssHeight: canvas.clientHeight,
         // Without an IntersectionObserver, assume it's in view.

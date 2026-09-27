@@ -1,10 +1,10 @@
 /* When a shader moves. Pure, so the rules can be tested without a GPU. */
 
-export type ShaderPlay = "auto" | "always" | "paused";
+import type { PlayState } from "@danolekh/gl";
 
-/** `play`: time runs. `hold`: keep the frame it shows (drawing one if it has none). `still`: show
- * the still frame, for reduced motion. */
-export type PlayState = "play" | "hold" | "still";
+export { advance, type PlayState } from "@danolekh/gl";
+
+export type ShaderPlay = "auto" | "always" | "paused";
 
 export interface PlayInputs {
   play: ShaderPlay;
@@ -27,7 +27,3 @@ export function playState(i: PlayInputs): PlayState {
   if (i.faceVisible === false && !i.turning) return "hold";
   return "play";
 }
-
-/** The shader's clock after `dt` seconds. It runs while the card is frozen too: the frost is a
- * layer over it, like ice over a screen, not a pause. */
-export const advance = (time: number, dt: number, speed: number): number => time + dt * speed;

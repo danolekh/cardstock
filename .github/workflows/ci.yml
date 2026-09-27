@@ -17,4 +17,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint format check-types test build
-      - run: pnpm --filter @danolekh/cardstock lint:pkg
+      - run: pnpm --filter @danolekh/cardstock --filter @danolekh/gl lint:pkg

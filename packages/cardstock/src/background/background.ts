@@ -3,7 +3,10 @@
  * description gives the paint, the tone the text should contrast with, the placeholder while an
  * image loads, and what <Frost /> draws under the face. */
 
+import { parseRgb, type ShaderParamValue } from "@danolekh/gl";
 import type * as React from "react";
+
+export { parseRgb };
 
 /** How the background reads. Text takes the opposite: light text on a `dark` background. */
 export type Tone = "dark" | "light";
@@ -50,7 +53,7 @@ export interface ImageBackground extends BackgroundBase {
 }
 
 /** A parameter's value: a number, a colour (hex or rgb()), or a short list of either. */
-export type ShaderParamValue = number | string | readonly number[] | readonly string[];
+export type { ShaderParamValue } from "@danolekh/gl";
 
 export interface ShaderBackground extends BackgroundBase {
   type: "shader";
@@ -261,23 +264,6 @@ export function parseCardBackground(input: unknown): CardBackground | null {
     default:
       return null;
   }
-}
-
-/** sRGB channels 0..255 of a hex or rgb() colour; null for anything else. */
-export function parseRgb(color: string): [number, number, number] | null {
-  const c = color.trim();
-  const hex = /^#([0-9a-f]{3,8})$/i.exec(c)?.[1];
-  if (hex && (hex.length === 3 || hex.length === 4)) {
-    return [0, 1, 2].map((i) => parseInt(hex[i]! + hex[i]!, 16)) as [number, number, number];
-  }
-  if (hex && (hex.length === 6 || hex.length === 8)) {
-    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
-  }
-  const fn = /^rgba?\(\s*([\d.]+%?)[\s,]+([\d.]+%?)[\s,]+([\d.]+%?)/i.exec(c);
-  if (!fn) return null;
-  return [fn[1]!, fn[2]!, fn[3]!].map((ch) =>
-    ch.endsWith("%") ? (parseFloat(ch) / 100) * 255 : parseFloat(ch),
-  ) as [number, number, number];
 }
 
 /** WCAG relative luminance, 0 (black) to 1 (white). */
