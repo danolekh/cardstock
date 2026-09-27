@@ -1,6 +1,6 @@
 /* Cuts a recorded master (out/<take>[-<theme>].mp4) down for the web.
  *
- *   pnpm --filter promo encode <master.mp4> <name> --out <dir> [--cover <dir>] [--x]
+ *   pnpm --filter promo encode <master.mp4> <name> --out <dir> [--cover <dir>] [--x] [--poster <s>]
  *
  * Writes into --out:
  *   <name>-1600.mp4          1600×900, for a hero
@@ -10,7 +10,8 @@
  * and with --cover, the posters again as <dir>/<name>.webp and <name>-800.webp, the project-cover
  * naming on danolekh.com; and with --x, <name>-x.mp4 for a post on X: the full 1920×1080 at 60fps,
  * at a higher quality than the web cuts (X re-encodes whatever it gets, so it should get a lot to
- * work from), well inside its 512 MB and 2:20 limits. H.264 High in yuv420p with the index up
+ * work from), well inside its 512 MB and 2:20 limits. `--poster <s>` takes the posters from that
+ * second instead of frame 0, for a video that doesn't open on its best frame. H.264 High in yuv420p with the index up
  * front, no audio: it plays inline and muted everywhere. */
 import { execFileSync } from "node:child_process";
 import { mkdirSync, statSync } from "node:fs";
@@ -58,9 +59,17 @@ if (args.includes("--x")) {
   console.log(`${file}  ${mb(file)}`);
 }
 
-// Frame 0 as a lossless PNG, then webp at both widths.
+// Frame 0 (or --poster's) as a lossless PNG, then webp at both widths.
 const frame = execFileSync("ffmpeg", [
-  ...["-loglevel", "error", "-i", master, "-frames:v", "1"],
+  ...[
+    "-loglevel",
+    "error",
+    ...(flag("poster") ? ["-ss", flag("poster")!] : []),
+    "-i",
+    master,
+    "-frames:v",
+    "1",
+  ],
   ...["-f", "image2pipe", "-c:v", "png", "-"],
 ]);
 const posters: [string, number][] = [

@@ -252,11 +252,35 @@ async function showcase(page: Page, view: TakeDef["view"]): Promise<Take> {
   return take;
 }
 
+/** Dan's showreel (`pnpm showreel` in ~/code/danolekh, on :4174): fifteen seconds that run on the
+ * page's own timeline from `__stage.start()`. The pointer only comes in for bar 6, circling the
+ * cardstock card so its glare follows, and is hidden: the reel is motion graphics, not a screen
+ * recording. The take is exactly 15 s, eight bars at 128 BPM. */
+function showreel(_page: Page, view: TakeDef["view"]): Take {
+  const card: Point = [900, 372];
+  const off: Point = [view.width + 60, view.height - 40];
+  const take = new Take(off).do((p) => p.evaluate(() => (window as any).__stage.start()));
+  take.wait(9700);
+  take.move(card[0] + 150, card[1] + 50, 300, linear).loop(card[0], card[1], 160, 70, 1000);
+  take.move(off[0], card[1] + 90, 300);
+  take.wait(15000 - take.t);
+  return take;
+}
+
 const DEMO = '[data-demo="raiffeisen-card"]';
 
 const SHADER_CARDS = ["holo-foil", "silk", "singularity", "mesh", "liquid-metal"];
 
 export const takes: Record<string, TakeDef> = {
+  showreel: {
+    url: "http://localhost:4174/?record",
+    view: { width: 1280, height: 720 },
+    ready: "html[data-ready]",
+    accent: "#3b82f6",
+    css: `body > div[style*="2147483647"] { display: none !important; }`,
+    script: async (page, view) => showreel(page, view),
+  },
+
   // The library, on cards in Raiffeisen's style, for the pitch: stage/raiffeisen.
   "raiffeisen-library": {
     url: "http://localhost:4173/?scene=raiffeisen",

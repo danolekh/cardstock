@@ -1,14 +1,16 @@
 /* Films a take (takes.ts) and writes the video.
  *
  *   pnpm --filter promo stage                                   # for `cardstock`
- *   pnpm --filter promo record <take> [--theme light|dark] [--fast] [--url <origin>]
+ *   pnpm --filter promo record <take> [--theme light|dark] [--fast] [--url <origin>] [--samples <n>]
  *                                                               # → out/<take>[-<theme>].mp4
  *
  * Every frame is rendered on purpose rather than filmed live: a shim (clock.js) gives the page a
  * virtual clock (performance.now, Date.now, rAF, timers) and holds every CSS transition to it, and
  * each frame steps that clock by exactly one interval before the screenshot. Nothing drops, however
  * slow the capture. Frames are taken at 120fps and 3840 wide, and pairs are blended into 60fps
- * 1080p, which gives the motion a light blur. `--fast` takes 60fps at 1080p for a quick look. */
+ * 1080p, which gives the motion a light blur. `--samples 4` takes 240fps and blends four, for
+ * fast motion (whip pans) that should smear rather than strobe. `--fast` takes 60fps at 1080p for a
+ * quick look. */
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -30,7 +32,8 @@ if (theme && !def.themed) throw new Error(`the ${name} take has no themes`);
 const FAST = args.includes("--fast");
 const VIEW = def.view;
 const SCALE = (FAST ? 1920 : 3840) / VIEW.width;
-const FPS = FAST ? 60 : 120;
+const SAMPLES = Number(flag("samples") ?? 2);
+const FPS = FAST ? 60 : 60 * SAMPLES;
 const URL_ = flag("url") ? new URL(new URL(def.url).pathname, flag("url")).href : def.url;
 const OUT = join(new URL("..", import.meta.url).pathname, "out");
 const local = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
@@ -75,7 +78,7 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
   const out = join(OUT, `${name}${theme ? `-${theme}` : ""}.mp4`);
   const filters = [
-    ...(FAST ? [] : ["tmix=frames=2", "fps=60"]),
+    ...(FAST ? [] : [`tmix=frames=${SAMPLES}`, "fps=60"]),
     "scale=1920:1080:flags=lanczos",
     "format=yuv420p",
   ];
