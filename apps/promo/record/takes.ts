@@ -359,6 +359,96 @@ async function priceEvidence(page: Page, view: TakeDef["view"], lead = 250, tail
 
 const LAB = (slug: string) => `[data-demo="${slug}"]`;
 
+/** The lab's glass: the cursor takes the lens by its middle, carries it in a figure-eight over the
+ * type, sets it down where it was and leaves. The backdrop is still, so the last frame is the first
+ * and the clip loops as it is (no `--loop`). */
+async function glass(page: Page, view: TakeDef["view"]): Promise<Take> {
+  const lens = await page.locator(`${LAB("glass")} [data-slot=glass-lens]`).boundingBox();
+  const stage = await page.locator(`${LAB("glass")} [data-slot=glass-stage]`).boundingBox();
+  if (!lens || !stage) throw new Error("no glass lens on the page");
+  const [cx, cy]: Point = [lens.x + lens.width / 2, lens.y + lens.height / 2];
+  // Kept inside the lens's room, so it never meets the clamp and the loop closes exactly.
+  const rx = Math.min(270, (stage.width - lens.width) / 2 - 24);
+  const ry = Math.min(95, (stage.height - lens.height) / 2 - 24);
+  const off: Point = [view.width + 60, view.height * 0.7];
+  return new Take(off)
+    .wait(500)
+    .move(cx, cy, 900)
+    .wait(120)
+    .press(true)
+    .wait(180)
+    .loop(cx, cy, rx, ry, 4800)
+    .wait(140)
+    .press(false)
+    .wait(260)
+    .move(...off, 800)
+    // Past the edge Chrome stops sending moves, so the cursor would stay on the last in-frame one.
+    .do((p) => p.evaluate(() => dispatchEvent(new PointerEvent("pointermove", { clientX: 4000, clientY: 0 }))))
+    .wait(500);
+}
+
+/** The lines of a block of text as the browser set them, top to bottom, in page px. */
+const textLines = (page: Page, selector: string) =>
+  page.evaluate((s) => {
+    const rows: { l: number; r: number; y: number; h: number }[] = [];
+    const walk = document.createTreeWalker(document.querySelector(s)!, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      if (n.parentElement?.tagName === "STYLE") continue;
+      range.selectNodeContents(n);
+      for (const r of range.getClientRects()) {
+        if (r.width < 1) continue;
+        const y = r.top + r.height / 2;
+        const row = rows.find((q) => Math.abs(q.y - y) < r.height / 3);
+        if (row) {
+          row.l = Math.min(row.l, r.left);
+          row.r = Math.max(row.r, r.right);
+        } else rows.push({ l: r.left, r: r.right, y, h: r.height });
+      }
+    }
+    return rows.sort((a, b) => a.y - b.y);
+  }, selector);
+
+/** The lab's smear in wild's style: in from the right, a fast sweep back through the middle of the
+ * headline, a wait while the ink settles, a slow drift back through it, another wait, and out the
+ * way it came, so the clip ends where it began. */
+async function smear(page: Page, view: TakeDef["view"]): Promise<Take> {
+  const rows = await textLines(page, `${LAB("smear")} [data-slot=smear]`);
+  if (rows.length < 2) throw new Error("the headline should run to two lines or more");
+  const left = Math.min(...rows.map((r) => r.l));
+  const right = Math.max(...rows.map((r) => r.r));
+  const i = Math.floor((rows.length - 1) / 2);
+  const [a, b] = [rows[i]!, rows[i + 1]!];
+  const off: Point = [view.width + 60, rows[0]!.y - rows[0]!.h];
+  const start: Point = [right + 48, a.y];
+  const end: Point = [left - 48, b.y];
+  const home: Point = [right + 48, (a.y + b.y) / 2];
+  const sine = (t: number) => (1 - Math.cos(Math.PI * t)) / 2;
+  // Fast: from line a down to line b with a slight belly, at full reach.
+  const fast = (t: number): Point => {
+    const e = sine(t);
+    return [start[0] + (end[0] - start[0]) * e, start[1] + (end[1] - start[1]) * e + Math.sin(Math.PI * e) * b.h * 0.15];
+  };
+  // Slow: back across, weaving between the two lines, with a little drag.
+  const slow = (t: number): Point => {
+    const e = sine(t);
+    return [end[0] + (home[0] - end[0]) * e, end[1] + (home[1] - end[1]) * e + Math.sin(2 * Math.PI * e) * a.h * 0.35];
+  };
+  return new Take(off)
+    .wait(900)
+    .move(...start, 850)
+    .wait(250)
+    .path(fast, 420)
+    // Longer than the smear's settle (900 ms), so the type is crisp again before the slow pass.
+    .wait(1500)
+    .path(slow, 2400)
+    .wait(1400)
+    .move(...off, 850)
+    // Past the edge Chrome stops sending moves, so the cursor would stay on the last in-frame one.
+    .do((p) => p.evaluate(() => dispatchEvent(new PointerEvent("pointermove", { clientX: 4000, clientY: 0 }))))
+    .wait(1000);
+}
+
 export const takes: Record<string, TakeDef> = {
   showreel: {
     url: "http://localhost:4174/?record",
@@ -506,5 +596,37 @@ export const takes: Record<string, TakeDef> = {
     // A second of stillness at each end: the backdrop never stops drifting, so encode it with
     // `--loop 0.8`, which crossfades the last 0.8 s into the first.
     script: async (page, view) => priceEvidence(page, view, 1000, 1000),
+  },
+
+  // Liquid Glass as its own lab item: one lens over big type on a still black stage, edge to edge.
+  "lab-glass": {
+    url: "http://localhost:3000/lab/glass",
+    view: { width: 960, height: 540 },
+    ready: `${LAB("glass")} [data-glass=bent]`,
+    accent: "#ffffff",
+    css: `
+      html, body { overflow: hidden !important; }
+      ${LAB("glass")} { position: fixed !important; inset: 0 !important; z-index: 2147483000; margin: 0 !important; }
+      ${LAB("glass")} [data-slot=glass-demo] { height: 100%; }
+      ${LAB("glass")} [data-slot=glass-stage] { height: 100% !important; border-radius: 0 !important; }
+    `,
+    script: glass,
+  },
+
+  // wild's headline smearing under the pointer, on their white page, edge to edge. No zoom: the
+  // demo sizes its type from its own width, so the frame decides the lines.
+  "lab-smear": {
+    url: "http://localhost:3000/lab/smear",
+    view: { width: 960, height: 540 },
+    ready: `${LAB("smear")} canvas[data-ready]`,
+    accent: "#1d1d1d",
+    css: `
+      html, body { overflow: hidden !important; }
+      ${LAB("smear")} { position: fixed !important; inset: 0 !important; z-index: 2147483000; margin: 0 !important; background: #fff; }
+      ${LAB("smear")} [data-slot=wild-demo] { height: 100%; display: flex; flex-direction: column; }
+      ${LAB("smear")} [data-slot=wild-stage] { flex: 1 1 auto; aspect-ratio: auto !important; min-height: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+      ${LAB("smear")} [data-slot=wild-note] { margin: 0 !important; padding: 0 56px 24px; }
+    `,
+    script: smear,
   },
 };
